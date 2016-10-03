@@ -29,14 +29,19 @@ output = nil
 
 t0 = Time.now
 loop do
-  sleep 0.05
-  output = `curl -f http://localhost:4567/benchmark/start 2>&1`
+  sleep 0.01
+  output = `curl -f http://localhost:4567/benchmark/start 2>/dev/null`
   next unless $?.success?
   elapsed = Time.now - t0
   break
 end
 
 server_pid = get_rails_server_pid
-Process.kill("INT", server_pid) if server_pid
+if server_pid
+  Process.kill("INT", server_pid)
+  puts "Interrupted Rails server at PID #{server_pid.inspect}."
+else
+  puts "No Rails server found, not killing."
+end
 puts "Output:\n#{output}"
 puts "Elapsed: #{elapsed.to_f.inspect} seconds"
