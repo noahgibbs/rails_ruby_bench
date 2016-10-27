@@ -13,35 +13,53 @@ def get_rails_server_pid
   end
 end
 
-server_pid = get_rails_server_pid
-if server_pid
-  puts "Existing Rails server found on port 4567, killing PID #{server_pid.inspect}."
-  Process.kill "KILL", server_pid
+def clean_server_for_startup
+  server_pid = get_rails_server_pid
+  if server_pid
+    puts "Existing Rails server found on port 4567, killing PID #{server_pid.inspect}."
+    Process.kill "KILL", server_pid
+  end
 end
 
-# Start the server
-fork do
-  system "cd MarkApp && RAILS_ENV=production rails server -p 4567"
+def server_start
+  # Start the server
+  fork do
+    system "cd MarkApp && RAILS_ENV=production rails server -p 4567"
+  end
 end
 
-elapsed = nil
-output = nil
-
-t0 = Time.now
-loop do
-  sleep 0.01
-  output = `curl -f http://localhost:4567/benchmark/start 2>/dev/null`
-  next unless $?.success?
-  elapsed = Time.now - t0
-  break
+def server_stop
+  server_pid = get_rails_server_pid
+  if server_pid
+    Process.kill("INT", server_pid)
+    puts "Interrupted Rails server at PID #{server_pid.inspect}."
+  else
+    puts "No Rails server found, not killing."
+  end
 end
 
-server_pid = get_rails_server_pid
-if server_pid
-  Process.kill("INT", server_pid)
-  puts "Interrupted Rails server at PID #{server_pid.inspect}."
-else
-  puts "No Rails server found, not killing."
+def single_run_benchmark_output_and_time
+  t0 = Time.now
+  loop do
+    sleep 0.01
+    output = `curl -f http://localhost:4567/benchmark/start 2>/dev/null`
+    next unless $?.success?
+    return [output, Time.now - t0]
+  end
 end
-puts "Output:\n#{output}"
-puts "Elapsed: #{elapsed.to_f.inspect} seconds"
+
+def with_running_server
+  server_start
+  yield
+ensure
+  server_stop
+end
+
+# Run actual benchmark
+clean_server_for_startup
+
+with_running_server do
+  server_output, elapsed = single_run_benchmark_output_and_time
+  puts "Output:\n#{server_output}"
+  puts "Elapsed: #{elapsed.to_f.inspect} seconds (single-run benchmark time)"
+end
