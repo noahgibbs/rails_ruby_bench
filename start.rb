@@ -19,6 +19,8 @@ def clean_server_for_startup
     puts "Existing Rails server found on port 4567, killing PID #{server_pid.inspect}."
     Process.kill "KILL", server_pid
   end
+
+
 end
 
 def server_start
@@ -55,11 +57,24 @@ ensure
   server_stop
 end
 
+def full_iteration_start_stop
+  elapsed = nil
+  with_running_server do
+    server_output, elapsed = single_run_benchmark_output_and_time
+    puts "Output:\n#{server_output}"
+  end
+  elapsed.to_f
+end
+
 # Run actual benchmark
 clean_server_for_startup
 
-with_running_server do
-  server_output, elapsed = single_run_benchmark_output_and_time
-  puts "Output:\n#{server_output}"
-  puts "Elapsed: #{elapsed.to_f.inspect} seconds (single-run benchmark time)"
-end
+# Burn-in
+full_iteration_start_stop
+
+iter_times = (1..5).map { full_iteration_start_stop }
+
+puts "Longest run: #{iter_times.max}"
+puts "Shortest run: #{iter_times.min}"
+puts "Mean: #{iter_times.inject(0.0, &:+) / iter_times.size}"
+puts "Median: #{iter_times.sort[ iter_times.size / 2 ] }"
