@@ -6,6 +6,11 @@ CUR_DIRECTORY = File.dirname(__FILE__)
 
 SETTINGS = JSON.parse File.read("setup.json")
 
+# TODO
+# See Postgres setup in https://github.com/discourse/discourse/blob/master/docs/DEVELOPMENT-OSX-NATIVE.md
+#   /usr/local/var/postgres/postgresql.conf
+#   brew services restart postgresql
+
 def clone_or_update_repo(repo_url, work_dir)
   if File.exist?(work_dir)
     Dir.chdir(work_dir) do
@@ -35,4 +40,13 @@ Dir.chdir(RUBY_DIR) do
   system("make") || raise("Make failed in #{RUBY_DIR}!")
 end
 
-system "cd #{RUBY_DIR} && autoconf && ./configure && make"
+Dir.chdir(DISCOURSE_DIR) do
+  system("createuser discourse") # Don't check for failure
+  system("psql -d postgres -c \"create database discourse owner discourse encoding 'UTF8' TEMPLATE template0;\"") # Don't check for failure
+  system("RAILS_ENV=profile rake db:create")  # Don't check for failure
+  system("RAILS_ENV=profile rake db:migrate") || raise("Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!")
+  system("RAILS_ENV=profile rake assets:precompile") || raise("Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!")
+end
+
+
+# TODO: create initializer to bundle jquery-include.js in assets?
