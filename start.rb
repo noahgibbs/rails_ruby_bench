@@ -4,6 +4,8 @@
 
 # TODO: allow customizing port number
 
+require 'rest-client'
+
 def get_rails_server_pid
   ps_out = `ps | grep -v grep | grep puma | grep MarkApp | grep 4567`
   if ps_out.strip =~ /(\d+)/
@@ -50,31 +52,63 @@ def single_run_benchmark_output_and_time
   end
 end
 
-def with_running_server
+def with_started_server
   server_start
   yield
 ensure
   server_stop
 end
 
+def with_running_server
+  with_started_server do
+    loop do
+      sleep 0.01
+      output = `curl -f http://localhost:4567/benchmark/start 2>/dev/null`
+      next unless $?.success?
+      yield
+      return
+    end
+  end
+end
+
 def full_iteration_start_stop
   elapsed = nil
-  with_running_server do
+  with_started_server do
     server_output, elapsed = single_run_benchmark_output_and_time
     puts "Output:\n#{server_output}"
   end
   elapsed.to_f
 end
 
+def basic_iteration_get_http
+  t0 = Time.now
+  RestClient.get "http://localhost:4567/benchmark/simple_request"
+  (Time.now - t0).to_f
+end
+
 # Run actual benchmark
 clean_server_for_startup
 
-# Burn-in
+# One Burn-in Iteration
 full_iteration_start_stop
 
-iter_times = (1..5).map { full_iteration_start_stop }
+startup_times = (1..5).map { full_iteration_start_stop }
+request_times = nil
 
-puts "Longest run: #{iter_times.max}"
-puts "Shortest run: #{iter_times.min}"
-puts "Mean: #{iter_times.inject(0.0, &:+) / iter_times.size}"
-puts "Median: #{iter_times.sort[ iter_times.size / 2 ] }"
+with_running_server do
+  request_times = (1..5).map { basic_iteration_get_http }
+end
+
+puts "===== Startup Benchmarks ====="
+puts "Longest run: #{startup_times.max}"
+puts "Shortest run: #{startup_times.min}"
+puts "Mean: #{startup_times.inject(0.0, &:+) / startup_times.size}"
+puts "Median: #{startup_times.sort[ startup_times.size / 2 ] }"
+puts "Raw times: #{startup_times.inspect}"
+
+puts "===== Startup Benchmarks ====="
+puts "Longest run: #{request_times.max}"
+puts "Shortest run: #{request_times.min}"
+puts "Mean: #{request_times.inject(0.0, &:+) / request_times.size}"
+puts "Median: #{request_times.sort[ request_times.size / 2 ] }"
+puts "Raw times: #{request_times.inspect}"
