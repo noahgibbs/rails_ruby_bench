@@ -5,19 +5,27 @@
 require 'optparse'
 require 'gabbler'
 
-random_seed = nil
+random_seed = 2546769937
+do_drop = false
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: ruby seed_db_data.rb [options]"
+  opts.banner = "Usage: RAILS_ENV=profile ruby seed_db_data.rb [options]"
   opts.on("-r", "--random-seed NUMBER", "random seed") do |r|
     random_seed = r
   end
+  opts.on("-d", "--drop", "drop existing database and re-migrate first") do
+    do_drop = true
+  end
 end.parse!
 
+# Set the constant
+RANDOM_SEED = random_seed
+
 # we want our script to generate a consistent output, to do so
-#  we monkey patch array sample so it always uses the same rng
+#  we monkey patch array sample so it always uses the same rng.
+# All randomization in this script uses .sample.
 class Array
-  RNG = Random.new(random_seed)
+  RNG = Random.new(RANDOM_SEED)
 
   def sample
     self[RNG.rand(size)]
@@ -50,18 +58,22 @@ def create_admin(seq)
   }
 end
 
-require File.expand_path(File.dirname(__FILE__) + "work/discourse/config/environment")
-
-SiteSetting.queue_jobs = false
+require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
 
 unless Rails.env == "profile"
   puts "This script should only be used in the profile environment"
   exit
 end
 
+if do_drop
+  system "cd work/discourse && RAILS_ENV=profile rake db:drop db:create db:migrate"
+end
+
+SiteSetting.queue_jobs = false
+
 # by default, Discourse has a "system" account
 if User.count > 1
-  puts "Only run this script against an empty DB"
+  puts "Only run this script against an empty DB (and in RAILS_ENV=profile)"
   exit
 end
 

@@ -25,7 +25,11 @@ def clone_or_update_repo(repo_url, work_dir)
 end
 
 # Require installation of homebrew packages for Mac
-system "brew install postgres redis git gifsicle jpegoptim optipng"
+system "brew install postgres redis git gifsicle jpegoptim optipng imagemagick"
+# TODO: add jhead?
+# TODO: add svgo
+
+# TODO: ImageMagick font install
 
 DISCOURSE_DIR = File.join(CUR_DIRECTORY, "work", "discourse")
 RUBY_DIR = File.join(CUR_DIRECTORY, "work", "ruby")
@@ -50,5 +54,21 @@ Dir.chdir(DISCOURSE_DIR) do
   system("psql -d postgres -c \"create database discourse owner discourse encoding 'UTF8' TEMPLATE template0;\"") # Don't check for failure
   system("RAILS_ENV=profile rake db:create")  # Don't check for failure
   system("RAILS_ENV=profile rake db:migrate") || raise("Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!")
-  system("RAILS_ENV=profile rake assets:precompile") || raise("Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!")
+
+  # TODO: better check for whether to rebuild precompiled assets
+  unless File.exists? "public/assets"
+    system("RAILS_ENV=profile rake assets:precompile") || raise("Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!")
+  end
+  unless File.exists? "public/uploads"
+    FileUtils.mkdir "public/uploads"
+  end
+end
+
+ASSETS_INIT = File.join(DISCOURSE_DIR, "config/initializers/assets.rb")
+unless File.exists?(ASSETS_INIT)
+  File.open(ASSETS_INIT, "w") do |f|
+    f.write <<-INITIALIZER
+      Rails.application.config.assets.precompile += %w( jquery_include.js )
+    INITIALIZER
+  end
 end

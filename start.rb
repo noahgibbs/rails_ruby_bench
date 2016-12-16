@@ -7,7 +7,7 @@
 require 'rest-client'
 
 def get_rails_server_pid
-  ps_out = `ps | grep -v grep | grep puma | grep MarkApp | grep 4567`
+  ps_out = `ps | grep -v bin/rails | grep 4567`
   if ps_out.strip =~ /(\d+)/
     $1.to_i
   else
