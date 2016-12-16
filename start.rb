@@ -7,7 +7,7 @@
 require 'rest-client'
 
 def get_rails_server_pid
-  ps_out = `ps | grep -v bin/rails | grep 4567`
+  ps_out = `ps | grep -v grep | grep bin/rails | grep 4567`
   if ps_out.strip =~ /(\d+)/
     $1.to_i
   else
@@ -28,7 +28,7 @@ end
 def server_start
   # Start the server
   fork do
-    system "cd work/discourse && RAILS_ENV=production rails server -p 4567"
+    system "cd work/discourse && RAILS_ENV=profile rails server -p 4567"
   end
 end
 
