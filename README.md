@@ -6,7 +6,9 @@ benchmark for Rails applications.
 ## Running the Benchmark Locally
 
 First, run setup.rb. This will clone your chosen Ruby and Discourse
-versions. Then run start.rb to run the benchmark.
+versions. Then run "RAILS\_ENV=profile ./seed\_db\_data.rb". to create
+account data in your database. Then run start.rb to run the server and
+the benchmark.
 
 ## Customizing the Benchmark
 
