@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 # Closely based on Discourse's user_simulator script
 
 require 'optparse'

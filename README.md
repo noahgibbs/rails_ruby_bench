@@ -1,6 +1,29 @@
-This is an initial attempt at a Rails benchmark for Ruby.
+This is an initial attempt at a Rails benchmark for Ruby. The intent
+is that it will be reviewed by members of the Ruby core team and
+others and eventually be the basis for an optcarrot-style Ruby
+benchmark for Rails applications.
 
-Decisions:
+## Running the Benchmark Locally
+
+First, run setup.rb. This will clone your chosen Ruby and Discourse
+versions. Then run start.rb to run the benchmark.
+
+## Customizing the Benchmark
+
+The benchmark uses the Ruby and Discourse versions found in
+setup.json. You can customize them there, then re-run setup.rb.
+You may need to clear the cloned versions in the work directory
+first.
+
+## Definitive Benchmark Numbers
+
+The definitive version of the benchmark uses an AWS (TBD) instance and
+an AMI.
+
+(To be written: how to create the AMI and get definitive numbers for
+the chosen 8-vCPU AWS instance.)
+
+## Decisions and Intent
 
 * Configurable Ruby, Rails and Discourse versions. This makes it easy
   to test a particular optimization or fix to any of Ruby, Rails or

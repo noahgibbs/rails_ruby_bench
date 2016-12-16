@@ -1,11 +1,13 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    gabbler (0.1.0)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  gabbler
 
 BUNDLED WITH
-   1.12.5
+   1.13.6
