@@ -6,10 +6,10 @@ CUR_DIRECTORY = File.dirname(__FILE__)
 
 SETTINGS = JSON.parse File.read("setup.json")
 
-# TODO
-# See Postgres setup in https://github.com/discourse/discourse/blob/master/docs/DEVELOPMENT-OSX-NATIVE.md
-#   /usr/local/var/postgres/postgresql.conf
-#   brew services restart postgresql
+# TODO:
+# * Review Postgres setup - complete?
+# * Mailcatcher
+# * create initializer to bundle jquery-include.js in assets?
 
 def clone_or_update_repo(repo_url, work_dir)
   if File.exist?(work_dir)
@@ -47,6 +47,3 @@ Dir.chdir(DISCOURSE_DIR) do
   system("RAILS_ENV=profile rake db:migrate") || raise("Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!")
   system("RAILS_ENV=profile rake assets:precompile") || raise("Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!")
 end
-
-
-# TODO: create initializer to bundle jquery-include.js in assets?
