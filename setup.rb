@@ -10,6 +10,8 @@ SETTINGS = JSON.parse File.read("setup.json")
 # * Review Postgres setup - complete?
 # * Mailcatcher
 # * create initializer to bundle jquery-include.js in assets?
+# * check if image optimizers are used in benchmark URLs
+# * brew install npm; npm install -g svgo
 
 def clone_or_update_repo(repo_url, work_dir)
   if File.exist?(work_dir)
@@ -21,6 +23,9 @@ def clone_or_update_repo(repo_url, work_dir)
   end
 
 end
+
+# Require installation of homebrew packages for Mac
+system "brew install postgres redis git gifsicle jpegoptim optipng"
 
 DISCOURSE_DIR = File.join(CUR_DIRECTORY, "work", "discourse")
 RUBY_DIR = File.join(CUR_DIRECTORY, "work", "ruby")
