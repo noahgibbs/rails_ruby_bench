@@ -25,9 +25,8 @@ def clone_or_update_repo(repo_url, work_dir)
 end
 
 # Require installation of homebrew packages for Mac
-system "brew install postgres redis git gifsicle jpegoptim optipng imagemagick"
-# TODO: add jhead?
-# TODO: add svgo
+system "brew install postgres redis git gifsicle jpegoptim optipng imagemagick jhead npm"
+system "npm install -g svgo"
 
 # TODO: ImageMagick font install
 

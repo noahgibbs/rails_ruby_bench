@@ -2,9 +2,24 @@
 
 # Start the Rails server and measure time to first request.
 
-# TODO: allow customizing port number
+# TODO: add command-line options, including:
+#
+# * port number of Rails server
+# * number of worker processes
+# * iterations per worker
+# * random seed
+# * startup iterations (to measure startup time)
+# * warmup iterations (before measuring requests)
 
 require 'rest-client'
+
+STARTUP_ITERATIONS = 5
+NUMBER_OF_WORKERS = 5
+INITIAL_RAND_SEED = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
+
+# This is an interesting question. A larger number means more chance for the randomized trials to even out.
+# A smaller number means the benchmark completes more quickly.
+WORKER_ITERATIONS = 300
 
 def get_rails_server_pid
   ps_out = `ps | grep -v grep | grep bin/rails | grep 4567`
@@ -21,8 +36,6 @@ def clean_server_for_startup
     puts "Existing Rails server found on port 4567, killing PID #{server_pid.inspect}."
     Process.kill "KILL", server_pid
   end
-
-
 end
 
 def server_start
@@ -92,11 +105,52 @@ clean_server_for_startup
 # One Burn-in Iteration
 full_iteration_start_stop
 
-startup_times = (1..5).map { full_iteration_start_stop }
+startup_times = (1..STARTUP_ITERATIONS).map { full_iteration_start_stop }
 request_times = nil
 
-with_running_server do
-  request_times = (1..5).map { basic_iteration_get_http }
+# TODO: fork workers *before* starting timer, then send data over a pipe to each of them to begin.
+
+children = {}
+
+# TODO: actually check user IDs in database. Right now, I assume we're dropping-and-recreating with the DB seed script.
+
+(1..NUMBER_OF_WORKERS).map do |worker_num|
+  pid = fork do
+    cmd = "/usr/bin/env ruby ./user_simulator.rb -u #{worker_num + 5} -r #{INITIAL_RAND_SEED + 100 * worker_num} -n #{WORKER_ITERATIONS} -w 0 -d 0"
+    puts "PID #{Process.pid} RUNNING: #{cmd}"
+    exec cmd
+    raise "Should never get here! Exec failed!"
+  end
+
+  # Save start time of each worker process
+  children[pid] = {
+    :start_time => Time.now,
+    :elapsed => nil
+  }
+end
+
+# These aren't perfect elapsed times, for several reasons.
+# TODO: measure elapsed time in the child process,
+# pass it back to the parent, like in ABProf.
+while children.any? { |c| c[:elapsed].nil? }
+  finished_pid = waitpid
+  children[finished_pid][:elapsed] = Time.now - children[finished_pid][:start_time]
+
+  # Save status object
+  children[finished_pid][:status] = $?
+end
+
+worker_times = []
+if children.all? { |c| c[:elapsed] && c[:status].success? }
+  # All children finished successfully, get elapsed times
+  worker_times = children.values.map { |v| v[:elapsed] }
+elsif children.all? { |c| c[:elapsed] }
+  # All children finished, at least one failed
+  STDERR.puts "********* At least one worker process failed! No benchmark data collected. *********"
+  exit -1
+else
+  STDERR.puts "********* Not all child processes exited! You may need to clean up! **********"
+  exit -1
 end
 
 puts "===== Startup Benchmarks ====="
@@ -107,8 +161,8 @@ puts "Median: #{startup_times.sort[ startup_times.size / 2 ] }"
 puts "Raw times: #{startup_times.inspect}"
 
 puts "===== Startup Benchmarks ====="
-puts "Longest run: #{request_times.max}"
-puts "Shortest run: #{request_times.min}"
-puts "Mean: #{request_times.inject(0.0, &:+) / request_times.size}"
-puts "Median: #{request_times.sort[ request_times.size / 2 ] }"
-puts "Raw times: #{request_times.inspect}"
+puts "Longest run: #{worker_times.max}"
+puts "Shortest run: #{worker_times.min}"
+puts "Mean: #{worker_times.inject(0.0, &:+) / worker_times.size}"
+puts "Median: #{worker_times.sort[ worker_times.size / 2 ] }"
+puts "Raw times: #{worker_times.inspect}"
