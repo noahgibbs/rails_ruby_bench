@@ -3,6 +3,9 @@ is that it will be reviewed by members of the Ruby core team and
 others and eventually be the basis for an optcarrot-style Ruby
 benchmark for Rails applications.
 
+This benchmark steals some code from Discourse
+(e.g. user\_simulator.rb, seed\_db\_data.rb), so it's licensed GPLv2.
+
 ## Running the Benchmark Locally
 
 First, run setup.rb. This will clone your chosen Ruby and Discourse
