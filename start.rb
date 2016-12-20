@@ -13,7 +13,7 @@
 
 require 'rest-client'
 
-STARTUP_ITERATIONS = 5
+STARTUP_ITERATIONS = 2
 NUMBER_OF_WORKERS = 5
 INITIAL_RAND_SEED = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
 
@@ -41,6 +41,7 @@ end
 def server_start
   # Start the server
   fork do
+    STDERR.puts "In PID #{Process.pid}, starting server on port 4567"
     system "cd work/discourse && RAILS_ENV=profile rails server -p 4567"
   end
 end
@@ -49,7 +50,14 @@ def server_stop
   server_pid = get_rails_server_pid
   if server_pid
     Process.kill("INT", server_pid)
-    puts "Interrupted Rails server at PID #{server_pid.inspect}."
+    puts "server_stop: Interrupted Rails server at PID #{server_pid.inspect}."
+    loop do
+      # Verify that server we started is sufficiently dead before we restart
+      STDERR.puts "Waiting for dead PID"
+      dead_pid = Process.waitpid
+      STDERR.puts "Got dead pid: #{dead_pid.inspect}"
+      break if dead_pid == server_pid
+    end
   else
     puts "No Rails server found, not killing."
   end
@@ -59,7 +67,7 @@ def single_run_benchmark_output_and_time
   t0 = Time.now
   loop do
     sleep 0.01
-    output = `curl -f http://localhost:4567/benchmark/start 2>/dev/null`
+    output = `curl -f http://localhost:4567/ 2>/dev/null`
     next unless $?.success?
     return [output, Time.now - t0]
   end
@@ -74,12 +82,18 @@ end
 
 def with_running_server
   with_started_server do
+    failed_iters = 0
     loop do
       sleep 0.01
-      output = `curl -f http://localhost:4567/benchmark/start 2>/dev/null`
-      next unless $?.success?
-      yield
-      return
+      puts "Trying iter #{failed_iters}..."
+      output = `curl -f http://localhost:4567/ 2>/dev/null`
+      if $?.success?
+        yield
+        return
+      else
+        failed_iters += 1
+      end
+      puts "Failed #{failed_iters} iterations and counting..."
     end
   end
 end
@@ -87,8 +101,9 @@ end
 def full_iteration_start_stop
   elapsed = nil
   with_started_server do
+    puts "Server is started, running start/stop iteration..."
     server_output, elapsed = single_run_benchmark_output_and_time
-    puts "Output:\n#{server_output}"
+    #puts "Output:\n#{server_output}"
   end
   elapsed.to_f
 end
@@ -99,12 +114,14 @@ def basic_iteration_get_http
   (Time.now - t0).to_f
 end
 
-# Run actual benchmark
+puts "Checking for previous running Rails server..."
 clean_server_for_startup
 
 # One Burn-in Iteration
+puts "Starting and stopping server to preload caches..."
 full_iteration_start_stop
 
+puts "Running start-time benchmarks for #{STARTUP_ITERATIONS} iterations..."
 startup_times = (1..STARTUP_ITERATIONS).map { full_iteration_start_stop }
 request_times = nil
 
@@ -120,6 +137,7 @@ children = {}
     puts "PID #{Process.pid} RUNNING: #{cmd}"
     exec cmd
     raise "Should never get here! Exec failed!"
+    exit!(-1)
   end
 
   # Save start time of each worker process
@@ -132,8 +150,8 @@ end
 # These aren't perfect elapsed times, for several reasons.
 # TODO: measure elapsed time in the child process,
 # pass it back to the parent, like in ABProf.
-while children.any? { |c| c[:elapsed].nil? }
-  finished_pid = waitpid
+while children.values.any? { |c| c[:elapsed].nil? }
+  finished_pid = Process.waitpid
   children[finished_pid][:elapsed] = Time.now - children[finished_pid][:start_time]
 
   # Save status object
