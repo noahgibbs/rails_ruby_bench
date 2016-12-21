@@ -46,6 +46,8 @@ def server_start
   end
 end
 
+# TODO: Proper audit on this code. Right now it assumes no child processes means no Rails server running, which isn't quite right.
+
 def server_stop
   server_pid = get_rails_server_pid
   if server_pid
@@ -62,7 +64,7 @@ def server_stop
     puts "No Rails server found, not killing."
   end
 rescue Errno::ECHILD
-  # Found no child processes... Which means that whatever we're attmpting to wait for, it's already dead.
+  # Found no child processes... Which means that whatever we're attempting to wait for, it's already dead.
   puts "No child processes, moving on with our day."
 end
 
