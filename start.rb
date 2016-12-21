@@ -33,7 +33,7 @@ end
 def clean_server_for_startup
   server_pid = get_rails_server_pid
   if server_pid
-    puts "Existing Rails server found on port 4567, killing PID #{server_pid.inspect}."
+    print "Existing Rails server found on port 4567, killing PID #{server_pid.inspect}.\n"
     Process.kill "KILL", server_pid
   end
 end
@@ -41,7 +41,7 @@ end
 def server_start
   # Start the server
   fork do
-    STDERR.puts "In PID #{Process.pid}, starting server on port 4567"
+    STDERR.print "In PID #{Process.pid}, starting server on port 4567\n"
     system "cd work/discourse && RAILS_ENV=profile rails server -p 4567"
   end
 end
@@ -52,20 +52,20 @@ def server_stop
   server_pid = get_rails_server_pid
   if server_pid
     Process.kill("INT", server_pid)
-    puts "server_stop: Interrupted Rails server at PID #{server_pid.inspect}."
+    print "server_stop: Interrupted Rails server at PID #{server_pid.inspect}.\n"
     loop do
       # Verify that server we started is sufficiently dead before we restart
-      STDERR.puts "Waiting for dead PID"
+      STDERR.print "Waiting for dead PID\n"
       dead_pid = Process.waitpid
-      STDERR.puts "Got dead pid: #{dead_pid.inspect}"
+      STDERR.print "Got dead pid: #{dead_pid.inspect}\n"
       break if dead_pid == server_pid
     end
   else
-    puts "No Rails server found, not killing."
+    print "No Rails server found, not killing.\n"
   end
 rescue Errno::ECHILD
   # Found no child processes... Which means that whatever we're attempting to wait for, it's already dead.
-  puts "No child processes, moving on with our day."
+  print "No child processes, moving on with our day.\n"
 end
 
 def single_run_benchmark_output_and_time
@@ -90,7 +90,7 @@ def with_running_server
     failed_iters = 0
     loop do
       sleep 0.01
-      puts "Trying iter #{failed_iters}..."
+      print "Trying iter #{failed_iters}...\n"
       output = `curl -f http://localhost:4567/ 2>/dev/null`
       if $?.success?
         yield
@@ -98,7 +98,7 @@ def with_running_server
       else
         failed_iters += 1
       end
-      puts "Failed #{failed_iters} iterations and counting..."
+      print "Failed #{failed_iters} iterations and counting...\n"
     end
   end
 end
@@ -106,9 +106,9 @@ end
 def full_iteration_start_stop
   elapsed = nil
   with_started_server do
-    puts "Server is started, running start/stop iteration..."
+    print "Server is started, running start/stop iteration...\n"
     server_output, elapsed = single_run_benchmark_output_and_time
-    #puts "Output:\n#{server_output}"
+    #print "Output:\n#{server_output}\n"
   end
   elapsed.to_f
 end
@@ -119,14 +119,14 @@ def basic_iteration_get_http
   (Time.now - t0).to_f
 end
 
-puts "Checking for previous running Rails server..."
+print "Checking for previous running Rails server...\n"
 clean_server_for_startup
 
 # One Burn-in Iteration
-puts "Starting and stopping server to preload caches..."
+print "Starting and stopping server to preload caches...\n"
 full_iteration_start_stop
 
-puts "Running start-time benchmarks for #{STARTUP_ITERATIONS} iterations..."
+print "Running start-time benchmarks for #{STARTUP_ITERATIONS} iterations...\n"
 startup_times = (1..STARTUP_ITERATIONS).map { full_iteration_start_stop }
 request_times = nil
 
@@ -138,8 +138,8 @@ children = {}
 
 (1..NUMBER_OF_WORKERS).map do |worker_num|
   pid = fork do
-    cmd = "/usr/bin/env ruby ./user_simulator.rb -u #{worker_num + 5} -r #{INITIAL_RAND_SEED + 100 * worker_num} -n #{WORKER_ITERATIONS} -w 0 -d 0"
-    puts "PID #{Process.pid} RUNNING: #{cmd}"
+    cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num - 1} -r #{INITIAL_RAND_SEED + 100 * worker_num} -n #{WORKER_ITERATIONS} -w 0 -d 0"
+    print "PID #{Process.pid} RUNNING: #{cmd}\n"
     exec cmd
     raise "Should never get here! Exec failed!"
     exit!(-1)
@@ -164,28 +164,28 @@ while children.values.any? { |c| c[:elapsed].nil? }
 end
 
 worker_times = []
-if children.all? { |c| c[:elapsed] && c[:status].success? }
+if children.values.all? { |c| c[:elapsed] && c[:status].success? }
   # All children finished successfully, get elapsed times
   worker_times = children.values.map { |v| v[:elapsed] }
-elsif children.all? { |c| c[:elapsed] }
+elsif children.values.all? { |c| c[:elapsed] }
   # All children finished, at least one failed
-  STDERR.puts "********* At least one worker process failed! No benchmark data collected. *********"
+  STDERR.print "********* At least one worker process failed! No benchmark data collected. *********\n"
   exit -1
 else
-  STDERR.puts "********* Not all child processes exited! You may need to clean up! **********"
+  STDERR.print "********* Not all child processes exited! You may need to clean up! **********\n"
   exit -1
 end
 
-puts "===== Startup Benchmarks ====="
-puts "Longest run: #{startup_times.max}"
-puts "Shortest run: #{startup_times.min}"
-puts "Mean: #{startup_times.inject(0.0, &:+) / startup_times.size}"
-puts "Median: #{startup_times.sort[ startup_times.size / 2 ] }"
-puts "Raw times: #{startup_times.inspect}"
+print "===== Startup Benchmarks =====\n"
+print "Longest run: #{startup_times.max}\n"
+print "Shortest run: #{startup_times.min}\n"
+print "Mean: #{startup_times.inject(0.0, &:+) / startup_times.size}\n"
+print "Median: #{startup_times.sort[ startup_times.size / 2 ] }\n"
+print "Raw times: #{startup_times.inspect}\n"
 
-puts "===== Startup Benchmarks ====="
-puts "Longest run: #{worker_times.max}"
-puts "Shortest run: #{worker_times.min}"
-puts "Mean: #{worker_times.inject(0.0, &:+) / worker_times.size}"
-puts "Median: #{worker_times.sort[ worker_times.size / 2 ] }"
-puts "Raw times: #{worker_times.inspect}"
+print "===== Startup Benchmarks =====\n"
+print "Longest run: #{worker_times.max}\n"
+print "Shortest run: #{worker_times.min}\n"
+print "Mean: #{worker_times.inject(0.0, &:+) / worker_times.size}\n"
+print "Median: #{worker_times.sort[ worker_times.size / 2 ] }\n"
+print "Raw times: #{worker_times.inspect}\n"

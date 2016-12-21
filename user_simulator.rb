@@ -5,14 +5,14 @@
 require 'optparse'
 require 'gabbler'
 
-#require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
+require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
 
-unless ["profile", "development", nil].include? ENV["RAILS_ENV"]
-  puts "User simulator prefers to be run in profile or development, not #{ENV["RAILS_ENV"].inspect}."
+unless ["profile", "development"].include? Rails.env
+  print "User simulator prefers to be run in profile or development, not #{ENV["RAILS_ENV"].inspect}.\n"
   exit -1
 end
 
-user_id = nil
+user_offset = 0
 random_seed = nil
 delay = nil
 iterations = 100
@@ -20,8 +20,8 @@ warmup_iterations = 50
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby user_simulator.rb [options]"
-  opts.on("-u", "--user NUMBER", "user id") do |u|
-    user_id = u.to_i
+  opts.on("-o", "--user-offset NUMBER", "user offset") do |u|
+    user_offset = u.to_i
   end
   opts.on("-r", "--random-seed NUMBER", "random seed") do |r|
     random_seed = r.to_i
@@ -36,11 +36,6 @@ OptionParser.new do |opts|
     warmup_iterations = n.to_i
   end
 end.parse!
-
-unless user_id
-  puts "user must be specified"
-  exit -1
-end
 
 # We want our script to generate a consistent output, so
 # we monkeypatch Array#sample to use our RNG.
@@ -65,10 +60,14 @@ def sentence
   sentence
 end
 
-user = User.find(user_id)
+user = User.offset(user_offset).first
+unless user
+  print "No user at offset #{user_offset.inspect}! Exiting.\n"
+  exit -1
+end
 last_topics = Topic.order('id desc').limit(10).pluck(:id)
 
-puts "Simulating activity for user id #{user.id}: #{user.name}"
+print "Simulating activity for user id #{user.id}: #{user.name}\n"
 
 # We want four actions - read, write, update and reply
 ACTION_TYPES = 4
@@ -99,11 +98,11 @@ end
 
 =begin
 while true
-  puts "Creating a random topic"
+  print "Creating a random topic\n"
   category = Category.where(read_restricted: false).order('random()').first
   PostCreator.create(user, raw: sentence, title: sentence[0..50].strip, category:  category.name)
 
-  puts "creating random reply"
+  print "creating random reply\n"
   PostCreator.create(user, raw: sentence, topic_id: last_topics.sample)
 
   sleep 2
