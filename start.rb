@@ -61,6 +61,9 @@ def server_stop
   else
     puts "No Rails server found, not killing."
   end
+rescue Errno::ECHILD
+  # Found no child processes... Which means that whatever we're attmpting to wait for, it's already dead.
+  puts "No child processes, moving on with our day."
 end
 
 def single_run_benchmark_output_and_time
