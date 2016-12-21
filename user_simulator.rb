@@ -16,7 +16,7 @@ user_offset = 0
 random_seed = nil
 delay = nil
 iterations = 100
-warmup_iterations = 50
+warmup_iterations = 0
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby user_simulator.rb [options]"
@@ -73,7 +73,7 @@ print "Simulating activity for user id #{user.id}: #{user.name}\n"
 ACTION_TYPES = 4
 
 # Randomize which action(s) to take, and randomize topic and reply data, plus a random number for offsets.
-actions = (1..(iterations + warmup_iterations)).map { |i| [ i, RNG.rand() * ACTION_TYPES + 1, sentence, RNG.rand() ] }
+actions = (1..(iterations + warmup_iterations)).map { |i| [ i, (RNG.rand() * ACTION_TYPES).to_i + 1, sentence, RNG.rand() ] }
 
 # URL example: http://localhost:4567/t/she-said-aloud-how-brave-theyll-all-think-me-at/63
 
@@ -92,7 +92,7 @@ actions = (1..(iterations + warmup_iterations)).map { |i| [ i, RNG.rand() * ACTI
     # Reply
     sleep 0.1
   else
-    raise "Something is wrong!"
+    raise "Something is wrong! Illegal value: #{actions[i][1]}"
   end
 end
 

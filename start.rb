@@ -161,6 +161,8 @@ while children.values.any? { |c| c[:elapsed].nil? }
 
   # Save status object
   children[finished_pid][:status] = $?
+
+  print "Child PID #{finished_pid.inspect} completed, elapsed time: #{children[finished_pid][:elapsed].inspect}, status: #{children[finished_pid][:status].inspect}\n"
 end
 
 worker_times = []
