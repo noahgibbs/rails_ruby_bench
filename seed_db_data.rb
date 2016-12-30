@@ -55,6 +55,7 @@ def create_admin(seq)
     admin.grant_admin!
     admin.change_trust_level!(TrustLevel[4])
     admin.email_tokens.update_all(confirmed: true)
+    admin.activate  # Added after activation seemed not to work
   }
 end
 
