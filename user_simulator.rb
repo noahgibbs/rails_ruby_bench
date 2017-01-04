@@ -111,29 +111,30 @@ DiscourseClient.request :post, "/session", { "login" => user.username, "password
 DiscourseClient.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "#{host}/" }
 
 # TODO: fix number of actions
-ACTION_TYPES = 6
+ACTIONS = [:read_topic, :post_reply, :post_topic, :delete_reply, :get_latest]  # Not present: :save_draft
+ACTION_TYPES = ACTIONS.size
 
 # Randomize which action(s) to take, and randomize topic and reply data, plus a random number for offsets.
 # Since we don't randomize again after this, the random seed's effect is limited to this line and before.
-actions = (1..(iterations + warmup_iterations)).map { |i| [ i, (RNG.rand() * ACTION_TYPES).to_i + 1, sentence, RNG.rand() ] }
+actions = (1..(iterations + warmup_iterations)).map { |i| [ i, (RNG.rand() * ACTION_TYPES).to_i, sentence, RNG.rand() ] }
 
 (iterations + warmup_iterations).times do |i|
-  case actions[i][1]
-  when 1
+  case ACTIONS[actions[i][1]]
+  when :read_topic
     # Read Topic
     topic_id = last_topics[-1]
     DiscourseClient.request(:get, "/t/#{topic_id}.json?track_visit=true&forceLoad=true")
-  when 2
+  when :save_draft
     # Save draft
     topic_id = last_topics[-1]
     post_id = last_posts[-1]  # Not fully correct
     draft_hash = { "reply" => "foo" * 50, "action" => "edit", "title" => "Title of draft reply", "categoryId" => 11, "postId" => post_id, "archetypeId" => "regular", "metaData" => nil, "sequence" => 0 }
     DiscourseClient.request(:post, "/draft.json", "draft_key" => "topic_#{topic_id}", "data" => draft_hash.to_json)
-  when 3
+  when :post_reply
     # Post reply
     DiscourseClient.request(:post, "/posts", "raw" => "", "unlist_topic" => "false", "category" => "9", "topic_id" => topic_id, "is_warning" => "false", "archetype" => "regular", "typing_during_msecs" => "2900", "composer_open_duration_msecs" => "12114", "featured_link" => "", "nested_post" => "true")
     # TODO: DiscourseClient.request(:delete, "/draft.json", "draft_key" => "topic_XX", "sequence" => "0")
-  when 4
+  when :post_topic
     # Post new topic
     DiscourseClient.request(:post, "/posts", "raw" => "", "title" => "", "unlist_topic" => "false", "category" => "", "is_warning" => "false", "archetype" => "regular", "typing_duration_msecs" => "6300", "composer_open_duration_msecs" => "31885", "nested_post" => "true")
     # TODO: DiscourseClient.request(:delete, "/draft.json", "topic_id" => "topic_XX")
@@ -160,12 +161,12 @@ Processing by DraftController#update as JSON
   Parameters: {"draft_key"=>"new_topic", "data"=>"{\"reply\":\"And this is the body. Yup! It's awesome. Totally awesome.\\n\",\"action\":\"createTopic\",\"title\":\"This is a new topic. Totally.\",\"categoryId\":null,\"postId\":null,\"archetypeId\":\"regular\",\"metaData\":null,\"composerTime\":23385,\"typingTime\":6300}", "sequence"=>"2"}
 Completed 200 OK in 8ms (Views: 0.2ms | ActiveRecord: 1.4ms)
 =end
-  when 5
+  when :delete_reply
     # Delete reply
     #DiscourseClient.request(:delete, "/posts/#{post_num}")
     #DiscourseClient.request(:get, "/posts/#{post_num - 1}")
     sleep 0.1
-  when 6
+  when :get_latest
     # Get latest
     DiscourseClient.request(:get, "/latest.json?order=default")
   else
