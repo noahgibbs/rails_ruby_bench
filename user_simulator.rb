@@ -68,6 +68,7 @@ unless user
   exit -1
 end
 last_topics = Topic.order('id desc').limit(10).pluck(:id)
+last_posts = Post.order('id desc').limit(10).pluck(:id)
 
 # TODO: allow overriding host and port
 host = "http://localhost:4567"
@@ -76,7 +77,7 @@ def log(s)
   print "[#{Process.pid}]: #{s}\n"
 end
 
-class HttpClient
+class DiscourseClient
   @cookies = nil
   @csrf = nil
   @prefix = "http://localhost:4567"
@@ -90,7 +91,11 @@ class HttpClient
   def self.request(method, url, payload = nil)
     args = { :method => method, :url => "#{@prefix}#{url}", :cookies => @cookies, :headers => { "X-CSRF-Token" => @csrf } }
     args[:payload] = payload if payload
-    resp = RestClient::Request.execute args
+    begin
+      resp = RestClient::Request.execute args
+    rescue RestClient::Found => e  # 302 redirect
+      resp = e.response
+    end
     @cookies = resp.cookies  # Maintain continuity of cookies
     resp
   end
@@ -99,59 +104,18 @@ end
 log "Simulating activity for user id #{user.id}: #{user.name}"
 
 log "Getting Rails CSRF token..."
-HttpClient.get_csrf_token
+DiscourseClient.get_csrf_token
 
 log "Logging in as #{user.username.inspect}..."
-HttpClient.request :post, "/session", { "login" => user.username, "password" => "password" }
-HttpClient.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "#{host}/" }
-
-#resp = RestClient.execute :method => post, :url => "#{host}/session", :payload => { "login" => user.username, "password" => "password" }, :cookies => cookies, :headers => #{ "X-CSRF-Token" => csrf }
-#cookies = resp.cookies
-
-
-#resp = RestClient.post "#{host}/login", { "login" => user.username, "password" => "password", "redirect" => "#{host}/" }, { :cookies => cookies, "X-CSRF-Token" => csrf }
-#cookies = resp.cookies
-
-=begin
-Login example:
-
-Started GET "/session/csrf?_=1482880567812" for ::1 at 2016-12-27 15:16:18 -0800
-Processing by SessionController#csrf as */*
-  Parameters: {"_"=>"1482880567812"}
-Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms)
-Started POST "/session" for ::1 at 2016-12-27 15:16:19 -0800
-Processing by SessionController#create as */*
-  Parameters: {"login"=>"admin0", "password"=>"[FILTERED]"}
-Completed 200 OK in 317ms (Views: 0.1ms | ActiveRecord: 25.9ms)
-Started POST "/login" for ::1 at 2016-12-27 15:16:19 -0800
-Processing by StaticController#enter as HTML
-  Parameters: {"username"=>"admin0", "password"=>"[FILTERED]", "redirect"=>"http://localhost:4567/"}
-Redirected to http://localhost:4567/
-Completed 302 Found in 5ms (ActiveRecord: 0.5ms)
-Started GET "/" for ::1 at 2016-12-27 15:16:19 -0800
-Processing by ListController#latest as HTML
-  Rendered list/list.erb within layouts/application (3.6ms)
-  Rendered layouts/_head.html.erb (0.2ms)
-  Rendered common/_special_font_face.html.erb (0.1ms)
-  Rendered common/_discourse_stylesheet.html.erb (0.1ms)
-  Rendered application/_header.html.erb (0.1ms)
-  Rendered common/_discourse_javascript.html.erb (0.3ms)
-Completed 200 OK in 77ms (Views: 6.7ms | ActiveRecord: 11.2ms)
-Started GET "/extra-locales/admin" for ::1 at 2016-12-27 15:16:19 -0800
-Processing by ExtraLocalesController#show as */*
-  Parameters: {"bundle"=>"admin"}
-  Rendered text template (0.0ms)
-Completed 200 OK in 10ms (Views: 0.3ms | ActiveRecord: 0.5ms)
-
-=end
-
+DiscourseClient.request :post, "/session", { "login" => user.username, "password" => "password" }
+DiscourseClient.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "#{host}/" }
 
 # TODO: fix number of actions
-ACTION_TYPES = 4
+ACTION_TYPES = 6
 
 # Randomize which action(s) to take, and randomize topic and reply data, plus a random number for offsets.
+# Since we don't randomize again after this, the random seed's effect is limited to this line and before.
 actions = (1..(iterations + warmup_iterations)).map { |i| [ i, (RNG.rand() * ACTION_TYPES).to_i + 1, sentence, RNG.rand() ] }
-
 
 =begin
 Started GET "/posts/151?_=1482866738618" for ::1 at 2016-12-27 13:51:17 -0800
@@ -241,18 +205,96 @@ Completed 200 OK in 10ms (Views: 0.1ms | ActiveRecord: 1.8ms)
   case actions[i][1]
   when 1
     # Read Topic
-    # Example URL: http://localhost:4567/t/down-she-came-upon-a-low-curtain-she-had-peeped-int/31
-    sleep 0.1
+    topic_id = last_topics[-1]
+    DiscourseClient.request(:get, "/t/#{topic_id}.json?track_visit=true&forceLoad=true")
   when 2
-    # Write draft
-    # Example URL: POST http://localhost:4567/draft.json
-    sleep 0.1
+    # Save draft
+    topic_id = last_topics[-1]
+    post_id => last_posts[-1]  # Not fully correct
+    draft_hash = { "reply" => "foo" * 50, "action" => "edit", "title" => "Title of draft reply", "categoryId" => 11, "postId" => post_id, "archetypeId" => "regular", "metaData" => nil, "sequence" => 0 }
+    DiscourseClient.request(:post, "/draft.json", "draft_key" => "topic_#{topic_id}", "data" => draft_hash.to_json)
   when 3
-    # Update
+    # Post reply
+=begin
+
+Started GET "/composer_messages?composer_action=reply&topic_id=98&_=1483481672871" for ::1 at 2017-01-03 14:36:24 -0800
+Processing by ComposerMessagesController#index as JSON
+  Parameters: {"composer_action"=>"reply", "topic_id"=>"98", "_"=>"1483481672871"}
+Completed 200 OK in 24ms (Views: 0.1ms | ActiveRecord: 9.6ms)
+Started POST "/posts" for ::1 at 2017-01-03 14:36:35 -0800
+Processing by PostsController#create as JSON
+  Parameters: {"raw"=>"Reply goes here. Yes it does. Oh yeah.\n", "unlist_topic"=>"false", "category"=>"9", "topic_id"=>"98", "is_warning"=>"false", "archetype"=>"regular", "typing_duration_msecs"=>"2900", "composer_open_duration_msecs"=>"12114", "featured_link"=>"", "nested_post"=>"true"}
+Completed 200 OK in 1822ms (Views: 0.5ms | ActiveRecord: 99.4ms)
+Started DELETE "/draft.json" for ::1 at 2017-01-03 14:36:37 -0800
+Processing by DraftController#destroy as JSON
+  Parameters: {"draft_key"=>"topic_98", "sequence"=>"0"}
+Completed 200 OK in 5ms (Views: 0.1ms | ActiveRecord: 0.9ms)
+=end
     sleep 0.1
   when 4
-    # Reply
+    # Post new topic
+=begin
+Started GET "/composer_messages?composer_action=createTopic&_=1483481672874" for ::1 at 2017-01-03 14:39:19 -0800
+Processing by ComposerMessagesController#index as JSON
+  Parameters: {"composer_action"=>"createTopic", "_"=>"1483481672874"}
+Completed 200 OK in 27ms (Views: 0.1ms | ActiveRecord: 1.6ms)
+Started GET "/similar_topics?title=This%20is%20a%20new%20topic.%20Totally.&raw=And%20this%20is%20the%20body.%20Yup!%20It%27s%20awesome.%0A&_=1483481672875" for ::1 at 2017-01-03 14:39:32 -0800
+Processing by SimilarTopicsController#index as JSON
+  Parameters: {"title"=>"This is a new topic. Totally.", "raw"=>"And this is the body. Yup! It's awesome.\n", "_"=>"1483481672875"}
+Completed 200 OK in 35ms (Views: 0.1ms | ActiveRecord: 16.0ms)
+Started POST "/draft.json" for ::1 at 2017-01-03 14:39:34 -0800
+Processing by DraftController#update as JSON
+  Parameters: {"draft_key"=>"new_topic", "data"=>"{\"reply\":\"And this is the body. Yup! It's awesome.\\n\",\"action\":\"createTopic\",\"title\":\"This is a new topic. Totally.\",\"categoryId\":null,\"postId\":null,\"archetypeId\":\"regular\",\"metaData\":null,\"composerTime\":14745,\"typingTime\":5000}", "sequence"=>"2"}
+Completed 200 OK in 14ms (Views: 0.3ms | ActiveRecord: 5.1ms)
+Started GET "/similar_topics?title=This%20is%20a%20new%20topic.%20Totally.&raw=And%20this%20is%20the%20body.%20Yup!%20It%27s%20awesome.%20Totally%20awesome.%0A&_=1483481672876" for ::1 at 2017-01-03 14:39:42 -0800
+Processing by SimilarTopicsController#index as JSON
+  Parameters: {"title"=>"This is a new topic. Totally.", "raw"=>"And this is the body. Yup! It's awesome. Totally awesome.\n", "_"=>"1483481672876"}
+Completed 200 OK in 23ms (Views: 0.1ms | ActiveRecord: 8.9ms)
+Started POST "/draft.json" for ::1 at 2017-01-03 14:39:42 -0800
+Processing by DraftController#update as JSON
+  Parameters: {"draft_key"=>"new_topic", "data"=>"{\"reply\":\"And this is the body. Yup! It's awesome. Totally awesome.\\n\",\"action\":\"createTopic\",\"title\":\"This is a new topic. Totally.\",\"categoryId\":null,\"postId\":null,\"archetypeId\":\"regular\",\"metaData\":null,\"composerTime\":23385,\"typingTime\":6300}", "sequence"=>"2"}
+Completed 200 OK in 8ms (Views: 0.2ms | ActiveRecord: 1.4ms)
+Started POST "/posts" for ::1 at 2017-01-03 14:39:51 -0800
+Processing by PostsController#create as JSON
+  Parameters: {"raw"=>"And this is the body. Yup! It's awesome. Totally awesome.\n", "title"=>"This is a new topic. Totally.", "unlist_topic"=>"false", "category"=>"", "is_warning"=>"false", "archetype"=>"regular", "typing_duration_msecs"=>"6300", "composer_open_duration_msecs"=>"31885", "nested_post"=>"true"}
+Completed 200 OK in 198ms (Views: 0.7ms | ActiveRecord: 56.5ms)
+Started DELETE "/draft.json" for ::1 at 2017-01-03 14:39:51 -0800
+Processing by DraftController#destroy as JSON
+  Parameters: {"draft_key"=>"new_topic", "sequence"=>"2"}
+Completed 200 OK in 4ms (Views: 0.2ms | ActiveRecord: 0.8ms)
+Started GET "/t/121.json?track_visit=true&forceLoad=true&_=1483481672877" for ::1 at 2017-01-03 14:39:51 -0800
+Processing by TopicsController#show as JSON
+  Parameters: {"track_visit"=>"true", "forceLoad"=>"true", "_"=>"1483481672877", "id"=>"121"}
+Completed 200 OK in 66ms (Views: 0.1ms | ActiveRecord: 15.5ms)
+
+=end
     sleep 0.1
+  when 5
+    # Delete reply
+    #DiscourseClient.request(:delete, "/posts/#{post_num}")
+    #DiscourseClient.request(:get, "/posts/#{post_num - 1}")
+=begin
+Started DELETE "/posts/2124" for ::1 at 2017-01-03 14:37:32 -0800
+Processing by PostsController#destroy as */*
+  Parameters: {"context"=>"/t/i-wonder-how-many-miles-ive-fallen-by-this-time/98/19", "id"=>"2124"}
+  Rendered text template (0.0ms)
+Completed 200 OK in 79ms (Views: 2.9ms | ActiveRecord: 19.6ms)
+Started GET "/posts/2124?_=1483481672872" for ::1 at 2017-01-03 14:37:32 -0800
+Processing by PostsController#show as JSON
+  Parameters: {"_"=>"1483481672872", "id"=>"2124"}
+Completed 200 OK in 12ms (Views: 0.1ms | ActiveRecord: 2.5ms)
+
+=end
+    sleep 0.1
+  when 6
+    # Get latest
+=begin
+Started GET "/latest.json?order=default&_=1483481672873" for ::1 at 2017-01-03 14:39:10 -0800
+Processing by ListController#latest as JSON
+  Parameters: {"order"=>"default", "_"=>"1483481672873"}
+Completed 200 OK in 52ms (Views: 0.1ms | ActiveRecord: 7.2ms)
+
+=end
   else
     raise "Something is wrong! Illegal value: #{actions[i][1]}"
   end
