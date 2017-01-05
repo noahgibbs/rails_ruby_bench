@@ -111,7 +111,7 @@ DiscourseClient.request :post, "/session", { "login" => user.username, "password
 DiscourseClient.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "#{host}/" }
 
 # TODO: fix number of actions
-ACTIONS = [:read_topic, :post_reply, :post_topic, :delete_reply, :get_latest]  # Not present: :save_draft
+ACTIONS = [:read_topic, :post_reply, :post_topic, :get_latest]  # Not active: :save_draft, :delete_reply. See below.
 ACTION_TYPES = ACTIONS.size
 
 # Randomize which action(s) to take, and randomize topic and reply data, plus a random number for offsets.
@@ -125,7 +125,7 @@ actions = (1..(iterations + warmup_iterations)).map { |i| [ i, (RNG.rand() * ACT
     topic_id = last_topics[-1]
     DiscourseClient.request(:get, "/t/#{topic_id}.json?track_visit=true&forceLoad=true")
   when :save_draft
-    # Save draft
+    # Save draft - currently not active, need to fix 403. Wrong topic ID?
     topic_id = last_topics[-1]
     post_id = last_posts[-1]  # Not fully correct
     draft_hash = { "reply" => "foo" * 50, "action" => "edit", "title" => "Title of draft reply", "categoryId" => 11, "postId" => post_id, "archetypeId" => "regular", "metaData" => nil, "sequence" => 0 }
@@ -162,7 +162,7 @@ Processing by DraftController#update as JSON
 Completed 200 OK in 8ms (Views: 0.2ms | ActiveRecord: 1.4ms)
 =end
   when :delete_reply
-    # Delete reply
+    # Delete reply, currently not active, need to get correct Post ID
     #DiscourseClient.request(:delete, "/posts/#{post_num}")
     #DiscourseClient.request(:get, "/posts/#{post_num - 1}")
     sleep 0.1
