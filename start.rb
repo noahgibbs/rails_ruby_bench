@@ -21,6 +21,9 @@ INITIAL_RAND_SEED = 16541799507913229037  # Chosen via irb and '(1..20).map { (0
 # A smaller number means the benchmark completes more quickly.
 WORKER_ITERATIONS = 300
 
+# Run this in "profile" environment for Discourse.
+ENV['RAILS_ENV'] = 'profile'
+
 def get_rails_server_pid
   ps_out = `ps | grep -v grep | grep bin/rails | grep 4567`
   if ps_out.strip =~ /(\d+)/
@@ -136,47 +139,50 @@ children = {}
 
 # TODO: actually check user IDs in database. Right now, I assume we're dropping-and-recreating with the DB seed script.
 
-(1..NUMBER_OF_WORKERS).map do |worker_num|
-  pid = fork do
-    cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num - 1} -r #{INITIAL_RAND_SEED + 100 * worker_num} -n #{WORKER_ITERATIONS} -w 0 -d 0"
-    print "PID #{Process.pid} RUNNING: #{cmd}\n"
-    exec cmd
-    raise "Should never get here! Exec failed!"
-    exit!(-1)
+with_started_server do
+
+  (1..NUMBER_OF_WORKERS).map do |worker_num|
+    pid = fork do
+      cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num - 1} -r #{INITIAL_RAND_SEED + 100 * worker_num} -n #{WORKER_ITERATIONS} -w 0 -d 0"
+      print "PID #{Process.pid} RUNNING: #{cmd}\n"
+      exec cmd
+      raise "Should never get here! Exec failed!"
+      exit!(-1)
+    end
+
+    # Save start time of each worker process
+    children[pid] = {
+      :start_time => Time.now,
+      :elapsed => nil
+    }
   end
 
-  # Save start time of each worker process
-  children[pid] = {
-    :start_time => Time.now,
-    :elapsed => nil
-  }
-end
+  # These aren't perfect elapsed times, for several reasons.
+  # TODO: measure elapsed time in the child process,
+  # pass it back to the parent, like in ABProf.
+  while children.values.any? { |c| c[:elapsed].nil? }
+    finished_pid = Process.waitpid
+    children[finished_pid][:elapsed] = Time.now - children[finished_pid][:start_time]
 
-# These aren't perfect elapsed times, for several reasons.
-# TODO: measure elapsed time in the child process,
-# pass it back to the parent, like in ABProf.
-while children.values.any? { |c| c[:elapsed].nil? }
-  finished_pid = Process.waitpid
-  children[finished_pid][:elapsed] = Time.now - children[finished_pid][:start_time]
+    # Save status object
+    children[finished_pid][:status] = $?
 
-  # Save status object
-  children[finished_pid][:status] = $?
+    print "Child PID #{finished_pid.inspect} completed, elapsed time: #{children[finished_pid][:elapsed].inspect}, status: #{children[finished_pid][:status].inspect}\n"
+  end
 
-  print "Child PID #{finished_pid.inspect} completed, elapsed time: #{children[finished_pid][:elapsed].inspect}, status: #{children[finished_pid][:status].inspect}\n"
-end
-
-worker_times = []
-if children.values.all? { |c| c[:elapsed] && c[:status].success? }
-  # All children finished successfully, get elapsed times
-  worker_times = children.values.map { |v| v[:elapsed] }
-elsif children.values.all? { |c| c[:elapsed] }
-  # All children finished, at least one failed
-  STDERR.print "********* At least one worker process failed! No benchmark data collected. *********\n"
-  exit -1
-else
-  STDERR.print "********* Not all child processes exited! You may need to clean up! **********\n"
-  exit -1
-end
+  worker_times = []
+  if children.values.all? { |c| c[:elapsed] && c[:status].success? }
+    # All children finished successfully, get elapsed times
+    worker_times = children.values.map { |v| v[:elapsed] }
+  elsif children.values.all? { |c| c[:elapsed] }
+    # All children finished, at least one failed
+    STDERR.print "********* At least one worker process failed! No benchmark data collected. *********\n"
+    exit -1
+  else
+    STDERR.print "********* Not all child processes exited! You may need to clean up! **********\n"
+    exit -1
+  end
+end # Stop the Rails server after all user simulators have exited.
 
 print "===== Startup Benchmarks =====\n"
 print "Longest run: #{startup_times.max}\n"
