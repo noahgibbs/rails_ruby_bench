@@ -2,30 +2,50 @@
 
 # Start the Rails server and measure time to first request.
 
-# TODO: add command-line options, including:
+# TODO: add command-line options for:
 #
 # * port number of Rails server
-# * number of worker processes
-# * iterations per worker
-# * random seed
-# * startup iterations (to measure startup time)
-# * warmup iterations (before measuring requests)
 
+require 'optparse'
 require 'rest-client'
-
-STARTUP_ITERATIONS = 2
-NUMBER_OF_WORKERS = 5
-INITIAL_RAND_SEED = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
-
-# This is an interesting question. A larger number means more chance for the randomized trials to even out.
-# A smaller number means the benchmark completes more quickly.
-WORKER_ITERATIONS = 300
 
 # Run this in "profile" environment for Discourse.
 ENV['RAILS_ENV'] = 'profile'
 
+startup_iters = 2
+random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
+worker_iterations = 300
+warmup_iterations = 0
+workers = 5
+port_num = 4567
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: ruby start.rb [options]"
+  opts.on("-r", "--random-seed NUMBER", "random seed") do |r|
+    random_seed = r.to_i
+  end
+  opts.on("-i", "--iterations NUMBER", "number of iterations per user simulator") do |n|
+    worker_iterations = n.to_i
+  end
+  opts.on("-n", "--num-workers NUMBER", "number of user simulators") do |n|
+    workers = n.to_i
+  end
+  opts.on("-s", "--num-startup-iters NUMBER", "number of startup/shutdown iterations") do |n|
+    startup_iters = n.to_i
+  end
+  opts.on("-w", "--warmup NUMBER", "number of warm-up iterations") do |n|
+    warmup_iterations = n.to_i
+  end
+  opts.on("-p", "--port NUMBER", "port number for test Rails server") do |n|
+    port_num = n.to_i
+  end
+end.parse!
+
+# Make the constant accessible inside the method definitions
+PORT_NUM = port_num
+
 def get_rails_server_pid
-  ps_out = `ps | grep -v grep | grep bin/rails | grep 4567`
+  ps_out = `ps | grep -v grep | grep bin/rails | grep #{PORT_NUM}`
   if ps_out.strip =~ /(\d+)/
     $1.to_i
   else
@@ -36,7 +56,7 @@ end
 def clean_server_for_startup
   server_pid = get_rails_server_pid
   if server_pid
-    print "Existing Rails server found on port 4567, killing PID #{server_pid.inspect}.\n"
+    print "Existing Rails server found on port #{PORT_NUM}, killing PID #{server_pid.inspect}.\n"
     Process.kill "KILL", server_pid
   end
 end
@@ -44,8 +64,8 @@ end
 def server_start
   # Start the server
   fork do
-    STDERR.print "In PID #{Process.pid}, starting server on port 4567\n"
-    system "cd work/discourse && RAILS_ENV=profile rails server -p 4567"
+    STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
+    system "cd work/discourse && RAILS_ENV=profile rails server -p #{PORT_NUM}"
   end
 end
 
@@ -75,7 +95,7 @@ def single_run_benchmark_output_and_time
   t0 = Time.now
   loop do
     sleep 0.01
-    output = `curl -f http://localhost:4567/ 2>/dev/null`
+    output = `curl -f http://localhost:#{PORT_NUM}/ 2>/dev/null`
     next unless $?.success?
     return [output, Time.now - t0]
   end
@@ -94,7 +114,7 @@ def with_running_server
     loop do
       sleep 0.01
       print "Trying iter #{failed_iters}...\n"
-      output = `curl -f http://localhost:4567/ 2>/dev/null`
+      output = `curl -f http://localhost:#{PORT_NUM}/ 2>/dev/null`
       if $?.success?
         yield
         return
@@ -118,7 +138,7 @@ end
 
 def basic_iteration_get_http
   t0 = Time.now
-  RestClient.get "http://localhost:4567/benchmark/simple_request"
+  RestClient.get "http://localhost:#{PORT_NUM}/benchmark/simple_request"
   (Time.now - t0).to_f
 end
 
@@ -129,8 +149,8 @@ clean_server_for_startup
 print "Starting and stopping server to preload caches...\n"
 full_iteration_start_stop
 
-print "Running start-time benchmarks for #{STARTUP_ITERATIONS} iterations...\n"
-startup_times = (1..STARTUP_ITERATIONS).map { full_iteration_start_stop }
+print "Running start-time benchmarks for #{startup_iters} iterations...\n"
+startup_times = (1..startup_iters).map { full_iteration_start_stop }
 request_times = nil
 
 # TODO: fork workers *before* starting timer, then send data over a pipe to each of them to begin.
@@ -141,9 +161,9 @@ children = {}
 
 with_started_server do
 
-  (1..NUMBER_OF_WORKERS).map do |worker_num|
+  (1..workers).map do |worker_num|
     pid = fork do
-      cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num - 1} -r #{INITIAL_RAND_SEED + 100 * worker_num} -n #{WORKER_ITERATIONS} -w 0 -d 0"
+      cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num - 1} -r #{random_seed + 100 * worker_num} -n #{worker_iterations} -w 0 -d 0"
       print "PID #{Process.pid} RUNNING: #{cmd}\n"
       exec cmd
       raise "Should never get here! Exec failed!"
