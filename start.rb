@@ -113,7 +113,6 @@ def with_running_server
     failed_iters = 0
     loop do
       sleep 0.01
-      print "Trying iter #{failed_iters}...\n"
       output = `curl -f http://localhost:#{PORT_NUM}/ 2>/dev/null`
       if $?.success?
         yield
@@ -121,7 +120,6 @@ def with_running_server
       else
         failed_iters += 1
       end
-      print "Failed #{failed_iters} iterations and counting...\n"
     end
   end
 end
@@ -159,11 +157,13 @@ children = {}
 
 # TODO: actually check user IDs in database. Right now, I assume we're dropping-and-recreating with the DB seed script.
 
-with_started_server do
+worker_times = []
+
+with_running_server do
 
   (1..workers).map do |worker_num|
     pid = fork do
-      cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num - 1} -r #{random_seed + 100 * worker_num} -n #{worker_iterations} -w 0 -d 0 -p #{PORT_NUM}"
+      cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num} -r #{random_seed + 100 * worker_num} -n #{worker_iterations} -w 0 -d 0 -p #{PORT_NUM}"
       print "PID #{Process.pid} RUNNING: #{cmd}\n"
       exec cmd
       raise "Should never get here! Exec failed!"
@@ -190,7 +190,6 @@ with_started_server do
     print "Child PID #{finished_pid.inspect} completed, elapsed time: #{children[finished_pid][:elapsed].inspect}, status: #{children[finished_pid][:status].inspect}\n"
   end
 
-  worker_times = []
   if children.values.all? { |c| c[:elapsed] && c[:status].success? }
     # All children finished successfully, get elapsed times
     worker_times = children.values.map { |v| v[:elapsed] }
