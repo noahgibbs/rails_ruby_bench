@@ -163,7 +163,7 @@ with_started_server do
 
   (1..workers).map do |worker_num|
     pid = fork do
-      cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num - 1} -r #{random_seed + 100 * worker_num} -n #{worker_iterations} -w 0 -d 0"
+      cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num - 1} -r #{random_seed + 100 * worker_num} -n #{worker_iterations} -w 0 -d 0 -p #{PORT_NUM}"
       print "PID #{Process.pid} RUNNING: #{cmd}\n"
       exec cmd
       raise "Should never get here! Exec failed!"

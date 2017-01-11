@@ -19,6 +19,7 @@ random_seed = 1234567890
 delay = nil
 iterations = 100
 warmup_iterations = 0
+port_num = 4567
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby user_simulator.rb [options]"
@@ -37,7 +38,13 @@ OptionParser.new do |opts|
   opts.on("-w", "--warmup NUMBER", "number of warm-up iterations") do |n|
     warmup_iterations = n.to_i
   end
+  opts.on("-p", "--port NUMBER", "port number of test Rails server") do |n|
+    port_num = n.to_i
+  end
 end.parse!
+
+# Make constant accessible inside class and method definitions
+PORT_NUM = port_num
 
 # We want our script to generate a consistent output, so
 # we monkeypatch Array#sample to use our RNG.
@@ -70,8 +77,7 @@ end
 last_topics = Topic.order('id desc').limit(10).pluck(:id)
 last_posts = Post.order('id desc').limit(10).pluck(:id)
 
-# TODO: allow overriding host and port
-host = "http://localhost:4567"
+host = "http://localhost:#{PORT_NUM}"
 
 def log(s)
   print "[#{Process.pid}]: #{s}\n"
@@ -80,7 +86,7 @@ end
 class DiscourseClient
   @cookies = nil
   @csrf = nil
-  @prefix = "http://localhost:4567"
+  @prefix = "http://localhost:#{PORT_NUM}"
 
   def self.get_csrf_token
     resp = RestClient.get "#{@prefix}/session/csrf.json"
