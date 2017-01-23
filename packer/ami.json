@@ -18,12 +18,15 @@
       "script": "discourse_install.sh"
     }, {
       "type": "shell",
+      "execute_command": "{{ .Vars }} /bin/bash -e -l {{ .Path }}",
       "script": "discourse_install_rvm.sh"
     }, {
       "type": "shell",
+      "execute_command": "{{ .Vars }} /bin/bash -e -l {{ .Path }}",
       "script": "discourse_install_node.sh"
     }, {
       "type": "shell",
+      "execute_command": "chmod +x {{ .Path }}; sudo su postgres -c '{{ .Vars }} {{ .Path }}'",
       "script": "discourse_install_postgres.sh"
     }
   ]
