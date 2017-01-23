@@ -4,6 +4,14 @@ Instead of using a pre-built AMI, you can build your own.
 
 This only builds a combined AMI, with the load-tester, database and Rails server on the same instance. You're welcome to adapt it to other configurations, though, if you'd like to benchmark in that configuration. I'd love a Pull Request!
 
+= Installing Packer
+
+Packer is annoyingly unfriendly to most packaging systems. On Linux, they just want you to download and manually install the Packer binary from their site.
+
+On Mac, Homebrew has a package for it which just does the same thing. But at least Homebrew will do it for you:
+
+    brew install packer
+
 = Getting Your AWS Account Set Up
 
 See Packer's documentation on building AMIs: https://www.packer.io/intro/getting-started/build-image.html
