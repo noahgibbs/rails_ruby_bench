@@ -20,13 +20,17 @@ setup.json. You can customize them there, then re-run setup.rb.
 You may need to clear the cloned versions in the work directory
 first.
 
-## Definitive Benchmark Numbers
+## Definitive Benchmark Numbers and AWS
 
 The definitive version of the benchmark uses an AWS (TBD) instance and
 an AMI.
 
 (To be written: how to create the AMI and get definitive numbers for
 the chosen 8-vCPU AWS instance.)
+
+For canonical benchmark numbers, use a t2.2xlarge instance. This has 8 vCPUs as discussed in the design documentation, and doesn't have an excessive amount of memory or I/O priority. It's a realistic hosting choice at roughly $270/month if running continuously. Your benchmark should run in well under an hour and cost about $0.40 (40 cents) in USD.
+
+See also packer/README.md for details of how to build an AMI manually.
 
 ## Decisions and Intent
 
