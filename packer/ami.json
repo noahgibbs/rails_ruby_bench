@@ -1,0 +1,26 @@
+{
+  "variables": {
+    "aws_access_key": "",
+    "aws_secret_key": ""
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "us-east-1",
+    "source_ami": "ami-6edd3078",
+    "instance_type": "t2.micro",
+    "ssh_username": "ubuntu",
+    "ami_name": "rails-ruby-benchmark {{timestamp}}"
+  }],
+  "provisioners": [{
+      "type": "file",
+      "source": "discourse_install.sh",
+      "destination": "/tmp/discourse_install.sh"
+    },
+    {
+      "type": "shell",
+      "script": "discourse_install.sh"
+    }
+  ]
+}
