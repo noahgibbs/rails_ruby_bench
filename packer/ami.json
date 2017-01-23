@@ -14,13 +14,17 @@
     "ami_name": "rails-ruby-benchmark {{timestamp}}"
   }],
   "provisioners": [{
-      "type": "file",
-      "source": "discourse_install.sh",
-      "destination": "/tmp/discourse_install.sh"
-    },
-    {
       "type": "shell",
       "script": "discourse_install.sh"
+    }, {
+      "type": "shell",
+      "script": "discourse_install_rvm.sh"
+    }, {
+      "type": "shell",
+      "script": "discourse_install_node.sh"
+    }, {
+      "type": "shell",
+      "script": "discourse_install_postgres.sh"
     }
   ]
 }
