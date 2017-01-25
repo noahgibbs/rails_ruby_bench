@@ -1,6 +1,17 @@
 # To be run as "ubuntu" user with sudo access.
 
-sleep 30 # Time for OS to boot properly during AMI build
+#sleep 30 # Time for OS to boot properly during AMI build
+
+# No ~/.bash_profile? Make one that sources ~/.bashrc. Otherwise you won't like what happens
+# if rvm creates it for you.
+if [ ! -f ~/.bash_profile ]; then
+   cat >~/.bash_profile <<EOF
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+EOF
+fi
+
 sudo apt-get update
 
 # Basics
