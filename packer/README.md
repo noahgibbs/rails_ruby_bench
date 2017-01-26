@@ -16,6 +16,12 @@ On Mac, Homebrew has a package for it which just does the same thing. But at lea
 
 See Packer's documentation on building AMIs: https://www.packer.io/intro/getting-started/build-image.html
 
+The short answer is that you can install the AWS credentials in the
+standard ways and Packer will use them. For Mac OS, you can use homebrew:
+
+    brew install aws-cli
+    aws configure
+
 == Canonical Benchmark Timing
 
 The region shouldn't matter much, but I recommend us-east-1 -- it's the cheapest, and this benchmark shouldn't need locality to any specific world location. You need to build an AMI in the specific region where you'll be testing.
