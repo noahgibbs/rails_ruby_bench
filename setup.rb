@@ -22,37 +22,29 @@ def clone_or_update_repo(repo_url, work_dir)
 
 end
 
-# Require installation of homebrew packages for Mac
-system "brew install postgres redis git gifsicle jpegoptim optipng imagemagick jhead npm"
-system "npm install -g svgo"
-
-# TODO: ImageMagick font install
-
 DISCOURSE_DIR = File.join(CUR_DIRECTORY, "work", "discourse")
-#RUBY_DIR = File.join(CUR_DIRECTORY, "work", "ruby")
+RUBY_DIR = File.join(CUR_DIRECTORY, "work", "ruby")
 
 clone_or_update_repo SETTINGS["discourse_git_url"], DISCOURSE_DIR
-#clone_or_update_repo SETTINGS["ruby_git_url"], RUBY_DIR
+clone_or_update_repo SETTINGS["ruby_git_url"], RUBY_DIR
 
 system("cd #{DISCOURSE_DIR} && bundle") || raise("Failed running bundler in #{DISCOURSE_DIR}")
 
-#Dir.chdir(RUBY_DIR) do
-#  unless File.exists?("configure")
-#    system("autoconf") || raise("Couldn't run autoconf in #{RUBY_DIR}!")
-#  end
-#  unless File.exists?("Makefile")
-#    system("./configure") || raise("Couldn't run configure in #{RUBY_DIR}!")
-#  end
-#  system("make") || raise("Make failed in #{RUBY_DIR}!")
-#end
+Dir.chdir(RUBY_DIR) do
+  unless File.exists?("configure")
+    system("autoconf") || raise("Couldn't run autoconf in #{RUBY_DIR}!")
+  end
+  unless File.exists?("Makefile")
+    system("./configure") || raise("Couldn't run configure in #{RUBY_DIR}!")
+  end
+  system("make") || raise("Make failed in #{RUBY_DIR}!")
+end
 
 Dir.chdir(DISCOURSE_DIR) do
-  system("createuser discourse") # Don't check for failure
-  system("psql -d postgres -c \"create database discourse owner discourse encoding 'UTF8' TEMPLATE template0;\"") # Don't check for failure
   system("RAILS_ENV=profile rake db:create")  # Don't check for failure
   system("RAILS_ENV=profile rake db:migrate") || raise("Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!")
 
-  # TODO: better check for whether to rebuild precompiled assets
+  # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
     system("RAILS_ENV=profile rake assets:precompile") || raise("Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!")
   end
@@ -61,6 +53,7 @@ Dir.chdir(DISCOURSE_DIR) do
   end
 end
 
+# Minor bugfix for this version of Discourse. Can remove later?
 ASSETS_INIT = File.join(DISCOURSE_DIR, "config/initializers/assets.rb")
 unless File.exists?(ASSETS_INIT)
   File.open(ASSETS_INIT, "w") do |f|
