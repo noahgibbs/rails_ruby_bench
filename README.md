@@ -8,8 +8,8 @@ This benchmark steals some code from Discourse
 
 ## Running the Benchmark Locally
 
-First, run setup.rb. This will clone your chosen Ruby and Discourse
-versions.
+First, run packer/setup.rb from the root of this repo. This will clone
+your chosen Ruby and Discourse versions.
 
 Then set up a Discourse development environment. There's a script in
 the Discourse directory to do it on OS X under

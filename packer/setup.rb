@@ -4,7 +4,7 @@ require "json"
 
 CUR_DIRECTORY = File.dirname(__FILE__)
 
-SETTINGS = JSON.parse File.read("setup.json")
+SETTINGS = JSON.parse File.read(File.join(CUR_DIRECTORY, "setup.json"))
 
 # TODO:
 # * Review Postgres setup - complete?
