@@ -9,9 +9,16 @@ This benchmark steals some code from Discourse
 ## Running the Benchmark Locally
 
 First, run setup.rb. This will clone your chosen Ruby and Discourse
-versions. Then run "RAILS\_ENV=profile ./seed\_db\_data.rb". to create
-account data in your database. Then run start.rb to run the server and
-the benchmark.
+versions.
+
+Then set up a Discourse development environment. There's a script in
+the Discourse directory to do it on OS X under
+work/discourse/script/osx_dev.
+
+Then run "RAILS\_ENV=profile ./seed\_db\_data.rb". to create
+account data in your database.
+
+Then run start.rb to run the server and the benchmark.
 
 ## Customizing the Benchmark
 
@@ -22,15 +29,17 @@ first.
 
 ## Definitive Benchmark Numbers and AWS
 
-The definitive version of the benchmark uses an AWS (TBD) instance and
-an AMI.
+The definitive version of the benchmark uses an AWS t2.2xlarge
+instance and an AMI. This has 8 vCPUs (4 virtual cores) as discussed
+in the design documentation, and doesn't have an excessive amount of
+memory or I/O priority. It's a realistic hosting choice at roughly
+$270/month if running continuously. Your benchmark should run in well
+under an hour and cost about $0.40 (40 cents) in USD.
 
-(To be written: how to create the AMI and get definitive numbers for
-the chosen 8-vCPU AWS instance.)
+To create your own AMI, see packer/README.md in this Git repo.
 
-For canonical benchmark numbers, use a t2.2xlarge instance. This has 8 vCPUs as discussed in the design documentation, and doesn't have an excessive amount of memory or I/O priority. It's a realistic hosting choice at roughly $270/month if running continuously. Your benchmark should run in well under an hour and cost about $0.40 (40 cents) in USD.
-
-See also packer/README.md for details of how to build an AMI manually.
+(TODO: add a reference to how to get the canonical pre-built AMIs for
+this benchmark.)
 
 ## Decisions and Intent
 
