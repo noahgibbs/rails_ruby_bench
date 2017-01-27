@@ -1,15 +1,14 @@
 #!/usr/bin/env ruby
 
-require "json"
-
 CUR_DIRECTORY = File.dirname(__FILE__)
 
-SETTINGS = JSON.parse File.read(File.join(CUR_DIRECTORY, "setup.json"))
+RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]
+DISCOURSE_GIT_URL    = ENV["DISCOURSE_GIT_URL"]
+RUBY_GIT_URL         = ENV["RUBY_GIT_URL"]
+RUBY_SYSTEM_PATH     = ENV["RUBY_SYSTEM_PATH"]
 
 # TODO:
 # * Review Postgres setup - complete?
-# * Mailcatcher
-# * create initializer to bundle jquery-include.js in assets?
 
 def clone_or_update_repo(repo_url, work_dir)
   if File.exist?(work_dir)
@@ -22,11 +21,12 @@ def clone_or_update_repo(repo_url, work_dir)
 
 end
 
-DISCOURSE_DIR = File.join(CUR_DIRECTORY, "work", "discourse")
-RUBY_DIR = File.join(CUR_DIRECTORY, "work", "ruby")
+RAILS_BENCH_DIR = File.join(CUR_DIRECTORY, "rails_ruby_bench")
+DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
+RUBY_DIR = File.join(RAILS_BENCH_DIR, "work", "ruby")
 
-clone_or_update_repo SETTINGS["discourse_git_url"], DISCOURSE_DIR
-clone_or_update_repo SETTINGS["ruby_git_url"], RUBY_DIR
+clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_DIR
+clone_or_update_repo RUBY_GIT_URL, RUBY_DIR
 
 system("cd #{DISCOURSE_DIR} && bundle") || raise("Failed running bundler in #{DISCOURSE_DIR}")
 
