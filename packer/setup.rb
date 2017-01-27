@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require "fileutils"
+
 CUR_DIRECTORY = Dir.pwd
 
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]
