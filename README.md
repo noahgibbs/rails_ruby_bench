@@ -38,6 +38,15 @@ under an hour and cost about $0.40 (40 cents) in USD.
 
 To create your own AMI, see packer/README.md in this Git repo.
 
+With your AMI (or using a public AMI), you can launch an instance as
+normal for AWS. Here's an example command line from the AWS
+documentation:
+
+    aws ec2 run-instances --image-id ami-xxxxxxxx --count 1 --instance-type t2.2xlarge --key-name MyKeyPair --security-groups my-sg
+
+(TODO: add more information about how to set up security groups and
+VPC IDs in AWS.)
+
 (TODO: add a reference to how to get the canonical pre-built AMIs for
 this benchmark.)
 

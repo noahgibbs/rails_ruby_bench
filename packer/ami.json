@@ -48,6 +48,10 @@
         ],
         "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} ruby {{ .Path }}",
         "script": "setup.rb"
+    }, {
+	"type": "file",
+	"source": "rc.local",
+	"destination": "/etc/rc.local"
     }
   ]
 }

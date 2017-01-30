@@ -65,7 +65,7 @@ def server_start
   # Start the server
   fork do
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
-    system "cd work/discourse && RAILS_ENV=profile rails server -p #{PORT_NUM}"
+    system "cd work/discourse && RAILS_ENV=profile puma -p #{PORT_NUM}"
   end
 end
 

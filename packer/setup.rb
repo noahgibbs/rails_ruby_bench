@@ -4,6 +4,7 @@ require "fileutils"
 
 CUR_DIRECTORY = Dir.pwd
 
+RUBY_INSTALL_DIR     = "/usr/local/benchmark/ruby" # Make configurable?
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]
 DISCOURSE_GIT_URL    = ENV["DISCOURSE_GIT_URL"]
 RUBY_GIT_URL         = ENV["RUBY_GIT_URL"]
@@ -32,17 +33,23 @@ RUBY_DIR = File.join(RAILS_BENCH_DIR, "work", "ruby")
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_DIR
 clone_or_update_repo RUBY_GIT_URL, RUBY_DIR
 
-system("cd #{DISCOURSE_DIR} && bundle") || raise("Failed running bundler in #{DISCOURSE_DIR}")
+system("cd #{RAILS_BENCH_DIR} && bundle") || raise("Failed running bundler in #{RAILS_BENCH_DIR.inspect}")
+system("cd #{DISCOURSE_DIR} && bundle") || raise("Failed running bundler in #{DISCOURSE_DIR.inspect}")
+
+system("sudo mkdir -p #{RUBY_INSTALL_DIR} && sudo chown -R ubuntu #{RUBY_INSTALL_DIR}") # Give a spot to install ruby to
 
 Dir.chdir(RUBY_DIR) do
   unless File.exists?("configure")
     system("autoconf") || raise("Couldn't run autoconf in #{RUBY_DIR}!")
   end
   unless File.exists?("Makefile")
-    system("./configure") || raise("Couldn't run configure in #{RUBY_DIR}!")
+    system("./configure --prefix #{RUBY_INSTALL_DIR}") || raise("Couldn't run configure in #{RUBY_DIR}!")
   end
   system("make") || raise("Make failed in #{RUBY_DIR}!")
+  system("make install") || raise("Installing Ruby failed in #{RUBY_DIR}!") # This should install to the benchmark ruby dir
 end
+system("rvm mount #{RUBY_INSTALL_DIR} -n benchmark-ruby") || raise("Couldn't mount #{RUBY_DIR.inspect} as benchmark-ruby!")
+system("rvm use --default ext-benchmark-ruby") || raise("Couldn't set ext-benchmark-ruby to rvm default!")
 
 Dir.chdir(DISCOURSE_DIR) do
   system("RAILS_ENV=profile rake db:create")  # Don't check for failure
@@ -66,3 +73,5 @@ unless File.exists?(ASSETS_INIT)
     INITIALIZER
   end
 end
+
+system("RAILS_ENV=profile ./seed_db_data.rb") || raise("Couldn't seed the database with profiling sample data!")
