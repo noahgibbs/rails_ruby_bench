@@ -52,8 +52,10 @@ system("rvm mount #{RUBY_INSTALL_DIR} -n benchmark-ruby") || raise("Couldn't mou
 system("rvm use --default ext-benchmark-ruby") || raise("Couldn't set ext-benchmark-ruby to rvm default!")
 
 Dir.chdir(DISCOURSE_DIR) do
-  system("RAILS_ENV=profile rake db:create")  # Don't check for failure
-  system("RAILS_ENV=profile rake db:migrate") || raise("Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!")
+  system("RAILS_ENV=profile bundle exec rake db:create")  # Don't check for failure
+  system("RAILS_ENV=profile bundle exec rake db:migrate") || raise("Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!")
+  #system("RAILS_ENV=profile bundle exec rake admin:create")  # This needs user input
+  #system("RAILS_ENV=profile bundle exec rake db:seed_fu")
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
@@ -74,4 +76,4 @@ unless File.exists?(ASSETS_INIT)
   end
 end
 
-system("RAILS_ENV=profile ./seed_db_data.rb") || raise("Couldn't seed the database with profiling sample data!")
+system("cd rails_ruby_bench && RAILS_ENV=profile ruby seed_db_data.rb") || raise("Couldn't seed the database with profiling sample data!")

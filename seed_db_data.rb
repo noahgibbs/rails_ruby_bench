@@ -48,10 +48,10 @@ end
 
 def create_admin(seq)
   User.new.tap { |admin|
-    admin.email = "admin@localhost#{seq}"
+    admin.email = "admin@fake#{seq}.appfolio.com"
     admin.username = "admin#{seq}"
     admin.password = "password"
-    admin.save
+    admin.save!
     admin.grant_admin!
     admin.change_trust_level!(TrustLevel[4])
     admin.email_tokens.update_all(confirmed: true)
