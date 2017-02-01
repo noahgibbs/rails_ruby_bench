@@ -28,7 +28,7 @@ The region shouldn't matter much, but I recommend us-east-1 -- it's the cheapest
 
 However, you do *not* need to build an AMI with the exact same instance type where you'll be benchmarking. So you can save a few pennies when building your instance, if you want.
 
-If you build an AMI and keep it in your account, that may also cost around $0.01 USD/month. So if you don't need to preserve it, delete it. I don't know if that's still true for a free AWS account, so YMMV.
+If you build an AMI and keep it in your account, that may also cost around $0.01 USD/month (plus the initial $0.02 when you build it.) So if you don't need to preserve it, delete it. I don't know if that's still true for a free AWS account, so YMMV.
 
 If you want more realistic performance numbers... Well, a benchmark may not be your best bet. But you *can* configure these processes to run on multiple instances, which will exchange some sources of error for other ones. However, I don't supply AMI build scripts for separate instances for database, load-tester, etc, nor do I supply a way to coordinate them. You'll need to set that up for yourself. It's not hard if you're used to setting up multi-instance Rails apps - Discourse is pretty standard in how it gets set up.
 
