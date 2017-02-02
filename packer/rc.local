@@ -11,6 +11,6 @@
 #
 # By default this script does nothing.
 
-sudo su ubuntu /bin/bash -c "cd /home/ubuntu/rails_ruby_bench && ./start.rb"
+sudo su ubuntu /bin/bash -l -c "cd /home/ubuntu/rails_ruby_bench && ./start.rb"
 
 exit 0
