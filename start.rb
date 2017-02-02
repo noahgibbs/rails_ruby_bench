@@ -56,15 +56,15 @@ def server_start
   @started_pid = fork do
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
     Dir.chdir "work/discourse"
-    exec({ "RAILS_ENV" => "profile" }, "rails", "server", "-p", PORT_NUM.to_s)
-    #exec "cd work/discourse && RAILS_ENV=profile rails server -p #{PORT_NUM}"
+    # Start Puma in a new process group to easily kill subprocesses if necessary
+    exec({ "RAILS_ENV" => "profile" }, "puma", "-p", PORT_NUM.to_s, :pgroup => true)
   end
 end
 
 # TODO: Proper audit on this code. Right now it assumes no child processes means no Rails server running, which isn't quite right.
 
 def server_stop
-  Process.kill("INT", @started_pid)
+  Process.kill("-INT", @started_pid)
   print "server_stop: Interrupted Rails server at expected PID #{@started_pid.inspect}.\n"
   loop do
     # Verify that server we started is sufficiently dead before we restart
@@ -148,9 +148,11 @@ with_running_server do
 
   (1..workers).map do |worker_num|
     pid = fork do
-      cmd = "/usr/bin/env ruby ./user_simulator.rb -o #{worker_num} -r #{random_seed + 100 * worker_num} -n #{worker_iterations} -w 0 -d 0 -p #{PORT_NUM}"
+      cmd = [ "ruby", "./user_simulator.rb", "-o", worker_num.to_s, "-r",
+        (random_seed + 100 * worker_num).to_s, "-n", worker_iterations.to_s,
+        "-w", "0", "-d", "0", "-p", PORT_NUM.to_s ]
       print "PID #{Process.pid} RUNNING: #{cmd}\n"
-      exec cmd
+      exec *cmd  # Avoid a subshell by exec'ing with many arguments, not a string
       raise "Should never get here! Exec failed!"
       exit!(-1)
     end
@@ -167,7 +169,7 @@ with_running_server do
   # pass it back to the parent, like in ABProf.
   while children.values.any? { |c| c[:elapsed].nil? }
     finished_pid = Process.waitpid
-    STDERR.puts "No such child pid #{finished_pid.inspect} in keys: #{children.keys.inspect}!"
+    STDERR.puts "No such child pid #{finished_pid.inspect} in keys: #{children.keys.inspect}!" unless children[finished_pid]
     children[finished_pid][:elapsed] = Time.now - children[finished_pid][:start_time]
 
     # Save status object
@@ -225,4 +227,4 @@ File.open(json_filename, "w") do |f|
   f.print JSON.dump(test_data)
   f.print "\n"
 end
-print "Wrote run data to #{json_filename}."
+print "Wrote run data to #{json_filename}.\n"
