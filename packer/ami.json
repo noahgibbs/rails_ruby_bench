@@ -51,7 +51,10 @@
     }, {
 	"type": "file",
 	"source": "rc.local",
-	"destination": "/etc/rc.local"
+	"destination": "/tmp/rc.local"
+    }, {
+        "type": "shell",
+	"inline": "sudo mv /tmp/rc.local /etc/rc.local"
     }
   ]
 }
