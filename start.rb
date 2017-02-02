@@ -8,6 +8,7 @@
 
 require 'optparse'
 require 'rest-client'
+require 'json'
 
 # Run this in "profile" environment for Discourse.
 ENV['RAILS_ENV'] = 'profile'
@@ -18,6 +19,7 @@ worker_iterations = 300
 warmup_iterations = 0
 workers = 5
 port_num = 4567
+out_dir = "/tmp"
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby start.rb [options]"
@@ -39,53 +41,39 @@ OptionParser.new do |opts|
   opts.on("-p", "--port NUMBER", "port number for test Rails server") do |n|
     port_num = n.to_i
   end
+  opts.on("-o", "--out-dir DIRECTORY", "directory to write JSON output to") do |d|
+    out_dir = d
+  end
 end.parse!
+
+raise "No such output directory!" unless File.directory?(out_dir)
 
 # Make the constant accessible inside the method definitions
 PORT_NUM = port_num
 
-def get_rails_server_pid
-  ps_out = `ps | grep -v grep | grep bin/rails | grep #{PORT_NUM}`
-  if ps_out.strip =~ /(\d+)/
-    $1.to_i
-  else
-    nil
-  end
-end
-
-def clean_server_for_startup
-  server_pid = get_rails_server_pid
-  if server_pid
-    print "Existing Rails server found on port #{PORT_NUM}, killing PID #{server_pid.inspect}.\n"
-    Process.kill "KILL", server_pid
-  end
-end
-
 def server_start
   # Start the server
-  fork do
+  @started_pid = fork do
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
-    system "cd work/discourse && RAILS_ENV=profile puma -p #{PORT_NUM}"
+    Dir.chdir "work/discourse"
+    exec({ "RAILS_ENV" => "profile" }, "rails", "server", "-p", PORT_NUM.to_s)
+    #exec "cd work/discourse && RAILS_ENV=profile rails server -p #{PORT_NUM}"
   end
 end
 
 # TODO: Proper audit on this code. Right now it assumes no child processes means no Rails server running, which isn't quite right.
 
 def server_stop
-  server_pid = get_rails_server_pid
-  if server_pid
-    Process.kill("INT", server_pid)
-    print "server_stop: Interrupted Rails server at PID #{server_pid.inspect}.\n"
-    loop do
-      # Verify that server we started is sufficiently dead before we restart
-      STDERR.print "Waiting for dead PID\n"
-      dead_pid = Process.waitpid
-      STDERR.print "Got dead pid: #{dead_pid.inspect}\n"
-      break if dead_pid == server_pid
-    end
-  else
-    print "No Rails server found, not killing.\n"
+  Process.kill("INT", @started_pid)
+  print "server_stop: Interrupted Rails server at expected PID #{@started_pid.inspect}.\n"
+  loop do
+    # Verify that server we started is sufficiently dead before we restart
+    STDERR.print "Waiting for dead PID expecting #{@started_pid.inspect}\n"
+    dead_pid = Process.waitpid
+    STDERR.print "Got dead pid: #{dead_pid.inspect}\n"
+    break if dead_pid == @started_pid
   end
+  @started_pid = nil
 rescue Errno::ECHILD
   # Found no child processes... Which means that whatever we're attempting to wait for, it's already dead.
   print "No child processes, moving on with our day.\n"
@@ -140,9 +128,6 @@ def basic_iteration_get_http
   (Time.now - t0).to_f
 end
 
-print "Checking for previous running Rails server...\n"
-clean_server_for_startup
-
 # One Burn-in Iteration
 print "Starting and stopping server to preload caches...\n"
 full_iteration_start_stop
@@ -182,6 +167,7 @@ with_running_server do
   # pass it back to the parent, like in ABProf.
   while children.values.any? { |c| c[:elapsed].nil? }
     finished_pid = Process.waitpid
+    STDERR.puts "No such child pid #{finished_pid.inspect} in keys: #{children.keys.inspect}!"
     children[finished_pid][:elapsed] = Time.now - children[finished_pid][:start_time]
 
     # Save status object
@@ -216,3 +202,27 @@ print "Shortest run: #{worker_times.min}\n"
 print "Mean: #{worker_times.inject(0.0, &:+) / worker_times.size}\n"
 print "Median: #{worker_times.sort[ worker_times.size / 2 ] }\n"
 print "Raw times: #{worker_times.inspect}\n"
+
+test_data = {
+  "settings" => {
+    "startup_iters" => startup_iters,
+    "random_seed" => random_seed,
+    "worker_iterations" => worker_iterations,
+    "workers" => workers,
+    "port_num" => port_num,
+    "out_dir" => out_dir
+  },
+  "startup" => {
+    "times" => startup_times
+  },
+  "requests" => {
+    "times" => worker_times
+  }
+}
+
+json_filename = "#{out_dir}/rails_ruby_bench_#{Time.now.to_i}.json"
+File.open(json_filename, "w") do |f|
+  f.print JSON.dump(test_data)
+  f.print "\n"
+end
+print "Wrote run data to #{json_filename}."
