@@ -102,8 +102,8 @@ topic_ids = 100.times.map do
 end
 
 puts
-puts "creating 500 replies"  # PostCreator is just crazy slow. Why?
-500.times do
+puts "creating 200 replies"  # PostCreator is just crazy slow. Why?
+200.times do
   putc "."
   PostCreator.create(users.sample, raw: sentence, topic_id: topic_ids.sample, skip_validations: true)
 end
