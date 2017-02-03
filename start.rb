@@ -16,7 +16,7 @@ ENV['RAILS_ENV'] = 'profile'
 startup_iters = 2
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
 worker_iterations = 300
-warmup_iterations = 0
+warmup_iterations = 0   # Right now, doesn't work. Need to fix when changing to threads.
 workers = 5
 port_num = 4567
 out_dir = "/tmp"
@@ -136,11 +136,11 @@ print "Running start-time benchmarks for #{startup_iters} iterations...\n"
 startup_times = (1..startup_iters).map { full_iteration_start_stop }
 request_times = nil
 
-# TODO: fork workers *before* starting timer, then send data over a pipe to each of them to begin.
+# TODO: send back data in non-thread-local vars
 
 children = {}
 
-# TODO: actually check user IDs in database. Right now, I assume we're dropping-and-recreating with the DB seed script.
+# TODO: actually check user IDs in database? Right now, I assume we're dropping-and-recreating with the DB seed script.
 
 worker_times = []
 
