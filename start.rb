@@ -29,7 +29,7 @@ OptionParser.new do |opts|
   opts.on("-i", "--iterations NUMBER", "number of iterations per user simulator") do |n|
     worker_iterations = n.to_i
   end
-  opts.on("-n", "--num-workers NUMBER", "number of user simulators") do |n|
+  opts.on("-n", "--num-workers NUMBER", "number of user simulator worker threads") do |n|
     workers = n.to_i
   end
   opts.on("-s", "--num-startup-iters NUMBER", "number of startup/shutdown iterations") do |n|
@@ -149,8 +149,8 @@ with_running_server do
   (1..workers).map do |worker_num|
     pid = fork do
       cmd = [ "ruby", "./user_simulator.rb", "-o", worker_num.to_s, "-r",
-        (random_seed + 100 * worker_num).to_s, "-n", worker_iterations.to_s,
-        "-w", "0", "-d", "0", "-p", PORT_NUM.to_s ]
+        (random_seed + 100 * worker_num).to_s, "-i", worker_iterations.to_s,
+        "-w", warmup_iterations.to_s, "-p", PORT_NUM.to_s ]
       print "PID #{Process.pid} RUNNING: #{cmd}\n"
       exec *cmd  # Avoid a subshell by exec'ing with many arguments, not a string
       raise "Should never get here! Exec failed!"

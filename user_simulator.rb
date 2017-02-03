@@ -20,26 +20,32 @@ delay = nil
 iterations = 100
 warmup_iterations = 0
 port_num = 4567
+worker_threads = 5
+out_dir = "/tmp"
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby user_simulator.rb [options]"
-  opts.on("-o", "--user-offset NUMBER", "user offset") do |u|
-    user_offset = u.to_i
-  end
   opts.on("-r", "--random-seed NUMBER", "random seed") do |r|
     random_seed = r.to_i
   end
-  opts.on("-d", "--delay NUMBER", "delay") do |d|
-    delay = d.to_f
-  end
-  opts.on("-n", "--number NUMBER", "number of iterations") do |n|
+  opts.on("-i", "--iterations NUMBER", "number of iterations") do |n|
     iterations = n.to_i
+  end
+  opts.on("-n", "--num-workers NUMBER", "number of worker threads") do |n|
+    worker_threads = n
   end
   opts.on("-w", "--warmup NUMBER", "number of warm-up iterations") do |n|
     warmup_iterations = n.to_i
   end
   opts.on("-p", "--port NUMBER", "port number of test Rails server") do |n|
     port_num = n.to_i
+  end
+  opts.on("-o", "--out-dir DIRECTORY", "directory to write JSON output to") do |d|
+    out_dir = d
+  end
+
+  opts.on("-o", "--user-offset NUMBER", "user offset") do |u|
+    user_offset = u.to_i
   end
 end.parse!
 
