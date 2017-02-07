@@ -14,48 +14,47 @@ unless ["profile", "development"].include? Rails.env
   exit -1
 end
 
-user_offset = 0
-random_seed = 1234567890
-delay = nil
-iterations = 100
-warmup_iterations = 0
-port_num = 4567
-worker_threads = 5
-out_dir = "/tmp"
+options = {
+  :user_offset => 0,
+  :random_seed => 1234567890,
+  :delay => nil,
+  :iterations => 100,
+  :warmup_iterations => 0,
+  :port_num => 4567,
+  :worker_threads => 1,
+  :out_dir => "/tmp",
+}
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby user_simulator.rb [options]"
   opts.on("-r", "--random-seed NUMBER", "random seed") do |r|
-    random_seed = r.to_i
+    options[:random_seed] = r.to_i
   end
   opts.on("-i", "--iterations NUMBER", "number of iterations") do |n|
-    iterations = n.to_i
+    options[:iterations] = n.to_i
   end
   opts.on("-n", "--num-workers NUMBER", "number of worker threads") do |n|
-    worker_threads = n
+    options[:worker_threads] = n
   end
   opts.on("-w", "--warmup NUMBER", "number of warm-up iterations") do |n|
-    warmup_iterations = n.to_i
+    options[:warmup_iterations] = n.to_i
   end
   opts.on("-p", "--port NUMBER", "port number of test Rails server") do |n|
-    port_num = n.to_i
+    options[:port_num] = n.to_i
   end
   opts.on("-o", "--out-dir DIRECTORY", "directory to write JSON output to") do |d|
-    out_dir = d
+    options[:out_dir] = d
   end
 
   opts.on("-o", "--user-offset NUMBER", "user offset") do |u|
-    user_offset = u.to_i
+    options[:user_offset] = u.to_i
   end
 end.parse!
-
-# Make constant accessible inside class and method definitions
-PORT_NUM = port_num
 
 # We want our script to generate a consistent output, so
 # we monkeypatch Array#sample to use our RNG. That's what
 # Gabbler uses.
-RNG = Random.new(random_seed)
+RNG = Random.new(options[:random_seed])
 class Array
   def sample
     self[RNG.rand(size)]
@@ -79,10 +78,10 @@ end
 ACTIONS = [:read_topic, :post_reply, :post_topic, :get_latest]  # Not active: :save_draft, :delete_reply. See below.
 
 class DiscourseClient
-  def initialize
+  def initialize(options)
     @cookies = nil
     @csrf = nil
-    @prefix = "http://localhost:#{PORT_NUM}"
+    @prefix = "http://localhost:#{options[:port_num]}"
 
     @last_topics = Topic.order('id desc').limit(10).pluck(:id)
     @last_posts = Post.order('id desc').limit(10).pluck(:id)
@@ -172,31 +171,46 @@ def log(s)
   print "[#{Process.pid}]: #{s}\n"
 end
 
-# Randomize which action(s) to take, and randomize topic and reply
-# data, plus a random number for offsets.  Since we don't randomize
-# again after this, the random seed's effect is limited to this line
-# and before.  Each array starts with an action number starting with
-# action 1, up to the number of iterations plus the number of warmup
-# iterations. Then it has an action type, a sentence (not always used)
-# and a floating-point argument (not always used.)
-actions = (1..(iterations + warmup_iterations)).map { |i| [ ACTIONS.sample, sentence, RNG.rand() ] }
+def worker_thread(options)
+  # Randomize which action(s) to take, and randomize topic and reply
+  # data, plus a random number for offsets.  Since we don't randomize
+  # again after this, the random seed's effect is limited to this line
+  # and before.  Each array starts with an action number starting with
+  # action 1, up to the number of iterations plus the number of warmup
+  # iterations. Then it has an action type, a sentence (not always used)
+  # and a floating-point argument (not always used.)
+  actions = (1..(options[:iterations] + options[:warmup_iterations])).map { |i| [ ACTIONS.sample, sentence, RNG.rand() ] }
 
-user = User.offset(user_offset).first
-unless user
-  print "No user at offset #{user_offset.inspect}! Exiting.\n"
-  exit -1
+  user = User.offset(options[:user_offset]).first
+  unless user
+    print "No user at offset #{options[:user_offset].inspect}! Exiting.\n"
+    exit -1
+  end
+
+  log "Simulating activity for user id #{user.id}: #{user.name}"
+
+  log "Getting Rails CSRF token..."
+  client = DiscourseClient.new(options)
+  client.get_csrf_token
+
+  log "Logging in as #{user.username.inspect}..."
+  client.request :post, "/session", { "login" => user.username, "password" => "password" }
+  client.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "http://localhost:#{options[:port_num]}/" }
+
+  (options[:iterations] + options[:warmup_iterations]).times do |i|
+    client.action_from_args *actions[i]
+  end
 end
 
-log "Simulating activity for user id #{user.id}: #{user.name}"
-
-log "Getting Rails CSRF token..."
-client = DiscourseClient.new
-client.get_csrf_token
-
-log "Logging in as #{user.username.inspect}..."
-client.request :post, "/session", { "login" => user.username, "password" => "password" }
-client.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "http://localhost:#{PORT_NUM}/" }
-
-(iterations + warmup_iterations).times do |i|
-  client.action_from_args *actions[i]
+threads = (1..options[:worker_threads]).map do
+  Thread.new do
+    begin
+      worker_thread(options)
+    rescue Exception => e
+      STDERR.print "Exception in worker thread: #{e.message}\n#{e.backtrace.join("\n")}\n"
+      raise e # Re-raise the exception
+    end
+  end
 end
+
+threads.each { |t| t.join }
