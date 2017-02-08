@@ -9,9 +9,11 @@
 require 'optparse'
 require 'rest-client'
 require 'json'
+require 'gabbler'  # Require this before requiring Rails' config/environment.rb, which will start Bundler.
 
 # Run this in "profile" environment for Discourse.
 ENV['RAILS_ENV'] = 'profile'
+require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
 
 startup_iters = 2
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
@@ -128,6 +130,8 @@ def basic_iteration_get_http
   (Time.now - t0).to_f
 end
 
+require_relative "user_simulator"
+
 # One Burn-in Iteration
 print "Starting and stopping server to preload caches...\n"
 full_iteration_start_stop
@@ -136,59 +140,21 @@ print "Running start-time benchmarks for #{startup_iters} iterations...\n"
 startup_times = (1..startup_iters).map { full_iteration_start_stop }
 request_times = nil
 
-# TODO: send back data in non-thread-local vars
-
-children = {}
-
-# TODO: actually check user IDs in database? Right now, I assume we're dropping-and-recreating with the DB seed script.
-
 worker_times = []
 
 with_running_server do
 
-  (1..workers).map do |worker_num|
-    pid = fork do
-      cmd = [ "ruby", "./user_simulator.rb", "-o", worker_num.to_s, "-r",
-        (random_seed + 100 * worker_num).to_s, "-i", worker_iterations.to_s,
-        "-w", warmup_iterations.to_s, "-p", PORT_NUM.to_s ]
-      print "PID #{Process.pid} RUNNING: #{cmd}\n"
-      exec *cmd  # Avoid a subshell by exec'ing with many arguments, not a string
-      raise "Should never get here! Exec failed!"
-      exit!(-1)
-    end
+  options = {
+    :random_seed => 1234567890,
+    :delay => nil,
+    :iterations => worker_iterations,
+    :warmup_iterations => warmup_iterations,
+    :port_num => PORT_NUM,
+    :worker_threads => workers,
+    :out_dir => "/tmp",
+  }
 
-    # Save start time of each worker process
-    children[pid] = {
-      :start_time => Time.now,
-      :elapsed => nil
-    }
-  end
-
-  # These aren't perfect elapsed times, for several reasons.
-  # TODO: measure elapsed time in the child process,
-  # pass it back to the parent, like in ABProf.
-  while children.values.any? { |c| c[:elapsed].nil? }
-    finished_pid = Process.waitpid
-    STDERR.puts "No such child pid #{finished_pid.inspect} in keys: #{children.keys.inspect}!" unless children[finished_pid]
-    children[finished_pid][:elapsed] = Time.now - children[finished_pid][:start_time]
-
-    # Save status object
-    children[finished_pid][:status] = $?
-
-    print "Child PID #{finished_pid.inspect} completed, elapsed time: #{children[finished_pid][:elapsed].inspect}, status: #{children[finished_pid][:status].inspect}\n"
-  end
-
-  if children.values.all? { |c| c[:elapsed] && c[:status].success? }
-    # All children finished successfully, get elapsed times
-    worker_times = children.values.map { |v| v[:elapsed] }
-  elsif children.values.all? { |c| c[:elapsed] }
-    # All children finished, at least one failed
-    STDERR.print "********* At least one worker process failed! No benchmark data collected. *********\n"
-    exit -1
-  else
-    STDERR.print "********* Not all child processes exited! You may need to clean up! **********\n"
-    exit -1
-  end
+  worker_times = run_trials options
 end # Stop the Rails server after all user simulators have exited.
 
 print "===== Startup Benchmarks =====\n"

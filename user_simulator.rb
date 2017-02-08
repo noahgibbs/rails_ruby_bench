@@ -1,63 +1,27 @@
-#!/usr/bin/env ruby
-
 # Initially based on Discourse's user_simulator script
 
-require 'optparse'
-require 'gabbler'
-#require 'rest-client'
-#require 'json'
+#require 'gabbler'
 
-require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
+# Example options array passed into these functions
+#options = {
+#  :user_offset => 0,
+#  :random_seed => 1234567890,
+#  :delay => nil,
+#  :iterations => 100,
+#  :warmup_iterations => 0,
+#  :port_num => 4567,
+#  :worker_threads => 5,
+#  :out_dir => "/tmp",
+#}
 
-unless ["profile", "development"].include? Rails.env
-  print "User simulator prefers to be run in profile or development, not #{ENV["RAILS_ENV"].inspect}.\n"
-  exit -1
-end
-
-options = {
-  :user_offset => 0,
-  :random_seed => 1234567890,
-  :delay => nil,
-  :iterations => 100,
-  :warmup_iterations => 0,
-  :port_num => 4567,
-  :worker_threads => 1,
-  :out_dir => "/tmp",
-}
-
-OptionParser.new do |opts|
-  opts.banner = "Usage: ruby user_simulator.rb [options]"
-  opts.on("-r", "--random-seed NUMBER", "random seed") do |r|
-    options[:random_seed] = r.to_i
-  end
-  opts.on("-i", "--iterations NUMBER", "number of iterations") do |n|
-    options[:iterations] = n.to_i
-  end
-  opts.on("-n", "--num-workers NUMBER", "number of worker threads") do |n|
-    options[:worker_threads] = n
-  end
-  opts.on("-w", "--warmup NUMBER", "number of warm-up iterations") do |n|
-    options[:warmup_iterations] = n.to_i
-  end
-  opts.on("-p", "--port NUMBER", "port number of test Rails server") do |n|
-    options[:port_num] = n.to_i
-  end
-  opts.on("-o", "--out-dir DIRECTORY", "directory to write JSON output to") do |d|
-    options[:out_dir] = d
-  end
-
-  opts.on("-o", "--user-offset NUMBER", "user offset") do |u|
-    options[:user_offset] = u.to_i
-  end
-end.parse!
-
-# We want our script to generate a consistent output, so
-# we monkeypatch Array#sample to use our RNG. That's what
-# Gabbler uses.
-RNG = Random.new(options[:random_seed])
+# We want our script to generate a consistent output, so we
+# monkeypatch Array#sample to use our RNG. That's what Gabbler
+# uses. So we use thread-local RNGs, to allow consistent per-thread
+# results. Also, ew.  We may want to inline Gabbler's functionality or
+# otherwise avoid this problem in the future.
 class Array
   def sample
-    self[RNG.rand(size)]
+    self[Thread.current["RNG"].rand(size)]
   end
 end
 
@@ -172,6 +136,7 @@ def log(s)
 end
 
 def worker_thread(options)
+  rng = Thread.current["RNG"]
   # Randomize which action(s) to take, and randomize topic and reply
   # data, plus a random number for offsets.  Since we don't randomize
   # again after this, the random seed's effect is limited to this line
@@ -179,7 +144,7 @@ def worker_thread(options)
   # action 1, up to the number of iterations plus the number of warmup
   # iterations. Then it has an action type, a sentence (not always used)
   # and a floating-point argument (not always used.)
-  actions = (1..(options[:iterations] + options[:warmup_iterations])).map { |i| [ ACTIONS.sample, sentence, RNG.rand() ] }
+  actions = (1..(options[:iterations] + options[:warmup_iterations])).map { |i| [ ACTIONS.sample, sentence, rng.rand() ] }
 
   user = User.offset(options[:user_offset]).first
   unless user
@@ -197,20 +162,33 @@ def worker_thread(options)
   client.request :post, "/session", { "login" => user.username, "password" => "password" }
   client.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "http://localhost:#{options[:port_num]}/" }
 
-  (options[:iterations] + options[:warmup_iterations]).times do |i|
+  # Do these iterations but don't time them.
+  options[:warmup_iterations].times do |i|
     client.action_from_args *actions[i]
   end
+
+  t0 = Time.now
+  options[:iterations].times do |i|
+    client.action_from_args *actions[i + options[:warmup_iterations]]
+  end
+  iteration_time = Time.now - t0
 end
 
-threads = (1..options[:worker_threads]).map do
-  Thread.new do
-    begin
-      worker_thread(options)
-    rescue Exception => e
-      STDERR.print "Exception in worker thread: #{e.message}\n#{e.backtrace.join("\n")}\n"
-      raise e # Re-raise the exception
+def run_trials(options)
+  output_times = []
+
+  threads = (1..options[:worker_threads]).map do |offset|
+    Thread.new do
+      Thread.current["RNG"] = Random.new(options[:random_seed] + offset * 100)
+      begin
+        output_times << worker_thread(options.merge(:user_offset => offset))
+      rescue Exception => e
+        STDERR.print "Exception in worker thread: #{e.message}\n#{e.backtrace.join("\n")}\n"
+        raise e # Re-raise the exception
+      end
     end
   end
-end
 
-threads.each { |t| t.join }
+  threads.each { |t| t.join }
+  output_times
+end
