@@ -19,6 +19,9 @@
 # uses. So we use thread-local RNGs, to allow consistent per-thread
 # results. Also, ew.  We may want to inline Gabbler's functionality or
 # otherwise avoid this problem in the future.
+# TODO: this whole idea is wrongheaded. Randomize the big array of
+# actions *first*, then divide between threads while everything is
+# still single-threaded. Duh.
 class Array
   def sample
     self[Thread.current["RNG"].rand(size)]
