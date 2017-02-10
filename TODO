@@ -1,0 +1,16 @@
+Rails Bench
+
+In README files, use correct characters for title/subhead lines.
+
+Write benchmark JSON into a directory that can be served by NGinX by default for easy retrieval of benchmark results.
+
+AWS measurements - measure degree of noisy neighbors. Measure vs dedicated instances?
+
+Go through a full run of test data, printing out exactly what it does, and find all the problems. Also, view Discourse after a full run and see all the problems.
+
+Generate all data w/ a single seed and divide between threads to make sure all runs w/ N iterations give same set of requests. How to order, though? The current "latest posts" mechanism doesn't coordinate that way, nor should it...
+
+Figure out what the "final composite" score should look like. Right now, just looking at execution time per thread.
+
+Figure out how to handle the top-level rails_ruby_bench Gemfile. Right now it can't/shouldn't be run with "bundle exec" since it winds up requiring Discourse's config, which in turn wants to use its own Gemfile. Can we reasonably do this without that? But then, how does it look up database items? We'd like it to be compatible with database.yml.
+
