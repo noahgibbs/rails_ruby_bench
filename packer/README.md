@@ -1,10 +1,10 @@
-= Using Packer to Build an AMI
+# Using Packer to Build an AMI
 
 Instead of using a pre-built AMI, you can build your own.
 
 This only builds a combined AMI, with the load-tester, database and Rails server on the same instance. You're welcome to adapt it to other configurations, though, if you'd like to benchmark in that configuration. I'd love a Pull Request!
 
-= Installing Packer
+# Installing Packer
 
 Packer is annoyingly unfriendly to most packaging systems. On Linux, they just want you to download and manually install the Packer binary from their site.
 
@@ -12,7 +12,7 @@ On Mac, Homebrew has a package for it which just does the same thing. But at lea
 
     brew install packer
 
-= Getting Your AWS Account Set Up
+# Getting Your AWS Account Set Up
 
 See Packer's documentation on building AMIs: https://www.packer.io/intro/getting-started/build-image.html
 
@@ -22,7 +22,7 @@ standard ways and Packer will use them. For Mac OS, you can use homebrew:
     brew install aws-cli
     aws configure
 
-== Canonical Benchmark Timing
+## Canonical Benchmark Timing
 
 The region shouldn't matter much, but I recommend us-east-1 -- it's the cheapest, and this benchmark shouldn't need locality to any specific world location. You need to build an AMI in the specific region where you'll be testing.
 
@@ -32,13 +32,13 @@ If you build an AMI and keep it in your account, that may also cost around $0.01
 
 If you want more realistic performance numbers... Well, a benchmark may not be your best bet. But you *can* configure these processes to run on multiple instances, which will exchange some sources of error for other ones. However, I don't supply AMI build scripts for separate instances for database, load-tester, etc, nor do I supply a way to coordinate them. You'll need to set that up for yourself. It's not hard if you're used to setting up multi-instance Rails apps - Discourse is pretty standard in how it gets set up.
 
-== Configuring Your AMI
+## Configuring Your AMI
 
 When choosing a source AMI, you'll need to match the region you're building in. Building in us-east-1? Use a us-east-1 AMI. I recommend Packer's EBS builder, but then you'll need to use EBS instead of instance store. And if you build on a cheap instance like t2.micro, you can probably only use an HVM AMI (fully virtualized.) To build a ParaVirtualized (PV) AMI, I think you'll need to build your AMI from a ParaVirtualized source AMI -- feel free to correct me if I'm wrong in the form of a Pull Request or Issue :-)
 
 You don't need to fully match the final instance size for the benchmark when you build your AMI. Though if you match it 100%, it'll certainly be compatible. The only reason I don't match them up perfectly is that it's generally cheaper to build your AMI on a smaller instance when you can.
 
-== IAM Roles
+## IAM Roles
 
 See Packer's documentation on setting up AWS and IAM roles: https://www.packer.io/docs/builders/amazon.html
 

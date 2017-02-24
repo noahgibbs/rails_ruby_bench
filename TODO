@@ -1,7 +1,5 @@
 Rails Bench
 
-In README files, use correct characters for title/subhead lines.
-
 Write benchmark JSON into a directory that can be served by NGinX by default for easy retrieval of benchmark results.
 
 AWS measurements - measure degree of noisy neighbors. Measure vs dedicated instances?
@@ -14,3 +12,6 @@ Figure out what the "final composite" score should look like. Right now, just lo
 
 Figure out how to handle the top-level rails_ruby_bench Gemfile. Right now it can't/shouldn't be run with "bundle exec" since it winds up requiring Discourse's config, which in turn wants to use its own Gemfile. Can we reasonably do this without that? But then, how does it look up database items? We'd like it to be compatible with database.yml.
 
+Try Puma in clustered mode w/ more than one MRI process
+
+Add Charles Nutter to "to thank" list in blog post

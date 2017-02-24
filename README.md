@@ -50,6 +50,24 @@ VPC IDs in AWS.)
 (TODO: add a reference to how to get the canonical pre-built AMIs for
 this benchmark.)
 
+## Debugging and AWS
+
+If you'd like to change the behavior of the AWS image, you can use AWS
+user data to run a script on boot. See
+"http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html".
+
+By default, the Rails benchmark is git-cloned under
+~ubuntu/rails\_ruby\_bench, and Ruby and Discourse are cloned under
+the work subdirectory of that repository. The built Ruby is installed
+into /usr/local/benchmark/ruby and mounted using rvm for the
+benchmark. If you want to change any of this when starting your own
+instance, those are great places to begin.
+
+By default, the image won't update or rebuild Ruby or Discourse, nor
+update the Rails Ruby benchmark on boot. That is, by default it will
+use the versions of all of those things that were current when the AMI
+was built. But you can modify your own image later however you like.
+
 ## Decisions and Intent
 
 * Configurable Ruby, Rails and Discourse versions. This makes it easy

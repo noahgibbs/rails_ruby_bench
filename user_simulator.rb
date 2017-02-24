@@ -20,8 +20,8 @@
 # results. Also, ew.  We may want to inline Gabbler's functionality or
 # otherwise avoid this problem in the future.
 # TODO: this whole idea is wrongheaded. Randomize the big array of
-# actions *first*, then divide between threads while everything is
-# still single-threaded. Duh.
+# actions *first*, then divide between worker queues while everything is
+# still single-threaded.
 class Array
   def sample
     self[Thread.current["RNG"].rand(size)]
