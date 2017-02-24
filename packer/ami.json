@@ -49,6 +49,9 @@
         "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} ruby {{ .Path }}",
         "script": "setup.rb"
     }, {
+        "type": "shell",
+        "script": "nginx_install.sh"
+    }, {
 	"type": "file",
 	"source": "rc.local",
 	"destination": "/tmp/rc.local"
@@ -58,4 +61,3 @@
     }
   ]
 }
-

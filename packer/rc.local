@@ -11,6 +11,6 @@
 #
 # By default this script does nothing.
 
-sudo su ubuntu /bin/bash -l -c "cd /home/ubuntu/rails_ruby_bench && ./start.rb"
+sudo su ubuntu /bin/bash -l -c "cd /home/ubuntu/rails_ruby_bench && ruby ./start.rb --out-dir /var/www/html/benchmark-results >> /tmp/benchmark_boot_console"
 
 exit 0
