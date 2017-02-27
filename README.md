@@ -42,10 +42,7 @@ With your AMI (or using a public AMI), you can launch an instance as
 normal for AWS. Here's an example command line from the AWS
 documentation:
 
-    aws ec2 run-instances --image-id ami-xxxxxxxx --count 1 --instance-type t2.2xlarge --key-name MyKeyPair --security-groups my-sg
-
-(TODO: add more information about how to set up security groups and
-VPC IDs in AWS.)
+    aws ec2 run-instances --image-id ami-xxxxxxxx --count 1 --instance-type t2.2xlarge --key-name MyKeyPair
 
 (TODO: add a reference to how to get the canonical pre-built AMIs for
 this benchmark.)
