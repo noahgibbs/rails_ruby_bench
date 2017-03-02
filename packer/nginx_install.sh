@@ -2,7 +2,7 @@
 
 # To be run as "ubuntu" user w/ sudo access
 
-sudo apt-get -yqq nginx
+sudo apt-get -yqq install nginx
 
 # Set up directory for benchmark to write into, served by NGinX
 sudo mkdir -p /var/www/html/benchmark-results

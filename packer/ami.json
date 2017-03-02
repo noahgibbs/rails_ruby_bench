@@ -56,11 +56,18 @@
 	"source": "rc.local",
 	"destination": "/tmp/rc.local"
     }, {
-	"type": "shell",
-	"inline": "sudo chmod +x /etc/rc.local"
-    }, {
         "type": "shell",
 	"inline": "sudo mv /tmp/rc.local /etc/rc.local"
+    }, {
+	"type": "shell",
+	"inline": "sudo chmod ugo+x /etc/rc.local"
+    }, {
+	"type": "file",
+	"source": "nginx.default.conf",
+	"destination": "/tmp/nginx.default.conf"
+    }, {
+	"type": "shell",
+	"inline": "sudo mv /tmp/nginx.default.conf /etc/nginx/sites-available/default"
     }
   ]
 }
