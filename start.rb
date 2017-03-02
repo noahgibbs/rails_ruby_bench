@@ -22,6 +22,8 @@ warmup_iterations = 0   # Right now, doesn't work. Need to fix when changing to 
 workers = 5
 port_num = 4567
 out_dir = "/tmp"
+puma_processes = 1
+puma_threads = 8
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby start.rb [options]"
@@ -46,12 +48,20 @@ OptionParser.new do |opts|
   opts.on("-o", "--out-dir DIRECTORY", "directory to write JSON output to") do |d|
     out_dir = d
   end
+  opts.on("-t", "--threads-per-server", "number of Puma threads per server process") do |t|
+    puma_threads = t
+  end
+  opts.on("-c", "--cluster-processes", "number of Puma processes in cluster mode") do |c|
+    puma_processes = c
+  end
 end.parse!
 
 raise "No such output directory!" unless File.directory?(out_dir)
 
 # Make the constant accessible inside the method definitions
 PORT_NUM = port_num
+PUMA_THREADS = puma_threads
+PUMA_PROCESSES = puma_processes
 
 def server_start
   # Start the server
@@ -59,7 +69,7 @@ def server_start
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
     Dir.chdir "work/discourse"
     # Start Puma in a new process group to easily kill subprocesses if necessary
-    exec({ "RAILS_ENV" => "profile" }, "puma", "-p", PORT_NUM.to_s, :pgroup => true)
+    exec({ "RAILS_ENV" => "profile" }, "puma", "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES, "-t", PUMA_THREADS, :pgroup => true)
   end
 end
 
