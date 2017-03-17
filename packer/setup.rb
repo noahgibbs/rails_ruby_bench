@@ -5,19 +5,27 @@ require "fileutils"
 CUR_DIRECTORY = Dir.pwd
 
 RUBY_INSTALL_DIR     = "/usr/local/benchmark/ruby" # Make configurable?
-RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]
+RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
 DISCOURSE_GIT_URL    = ENV["DISCOURSE_GIT_URL"]
+DISCOURSE_TAG        = ENV["DISCOURSE_TAG"]
 RUBY_GIT_URL         = ENV["RUBY_GIT_URL"]
+RUBY_TAG             = ENV["RUBY_TAG"]
 RUBY_SYSTEM_PATH     = ENV["RUBY_SYSTEM_PATH"]
+OTHER_RUBIES         = ENV["OTHER_RUBIES"]
 
 # TODO:
 # * Review Postgres setup - complete?
 
-def clone_or_update_repo(repo_url, work_dir)
+def clone_or_update_repo(repo_url, tag, work_dir)
+  tag = tag.strip
   if File.exist?(work_dir)
     Dir.chdir(work_dir) do
       system("git pull") || raise("Couldn't 'git pull' in #{work_dir}!")
     end
+  elsif tag && tag != ""
+    cmd = "git clone #{repo_url} -b #{tag} #{work_dir}"
+    puts "Command: #{cmd.inspect}"
+    system(cmd) || raise("Couldn't 'git clone' at tag/branch #{tag.inspect} into #{work_dir}!")
   else
     cmd = "git clone #{repo_url} #{work_dir}"
     puts "Command: #{cmd.inspect}"
@@ -30,11 +38,8 @@ RAILS_BENCH_DIR = File.join(CUR_DIRECTORY, "rails_ruby_bench")
 DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 RUBY_DIR = File.join(RAILS_BENCH_DIR, "work", "ruby")
 
-clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_DIR
-clone_or_update_repo RUBY_GIT_URL, RUBY_DIR
-
-system("cd #{RAILS_BENCH_DIR} && bundle") || raise("Failed running bundler in #{RAILS_BENCH_DIR.inspect}")
-system("cd #{DISCOURSE_DIR} && bundle") || raise("Failed running bundler in #{DISCOURSE_DIR.inspect}")
+clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
+clone_or_update_repo RUBY_GIT_URL, RUBY_TAG, RUBY_DIR
 
 system("sudo mkdir -p #{RUBY_INSTALL_DIR} && sudo chown -R ubuntu #{RUBY_INSTALL_DIR}") # Give a spot to install ruby to
 
@@ -50,6 +55,15 @@ Dir.chdir(RUBY_DIR) do
 end
 system("rvm mount #{RUBY_INSTALL_DIR} -n benchmark-ruby") || raise("Couldn't mount #{RUBY_DIR.inspect} as benchmark-ruby!")
 system("rvm use --default ext-benchmark-ruby") || raise("Couldn't set ext-benchmark-ruby to rvm default!")
+system("cd #{RAILS_BENCH_DIR} && bundle") || raise("Failed running bundler in #{RAILS_BENCH_DIR.inspect}")
+system("cd #{DISCOURSE_DIR} && bundle") || raise("Failed running bundler in #{DISCOURSE_DIR.inspect}")
+
+# If OTHER_RUBIES contains anything, install them via RVM. Useful for benchmarking multiple Rubies.
+OTHER_RUBIES.split(",").compact.each do |other_ruby_version|
+  system("bash -l -c \"rvm install #{other_ruby_version}\"") || raise("Couldn't use RVM to install #{other_ruby_version.inspect}!")
+  system("cd #{RAILS_BENCH_DIR} && rvm use #{other_ruby_version} && bundle") || raise("Failed running bundler under ruby #{other_ruby_version} in #{RAILS_BENCH_DIR.inspect}")
+  system("cd #{DISCOURSE_DIR} && rvm use #{other_ruby_version} && bundle") || raise("Failed running bundler under ruby #{other_ruby_version} in #{DISCOURSE_DIR.inspect}")
+end
 
 Dir.chdir(DISCOURSE_DIR) do
   system("RAILS_ENV=profile bundle exec rake db:create")  # Don't check for failure
