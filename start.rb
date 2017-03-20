@@ -187,8 +187,13 @@ test_data = {
     "random_seed" => random_seed,
     "worker_iterations" => worker_iterations,
     "workers" => workers,
+    "puma_processes" => puma_processes,
+    "puma_threads" => puma_threads,
     "port_num" => port_num,
     "out_dir" => out_dir
+  },
+  "environment" => {
+    "RUBY_VERSION" => RUBY_VERSION,
   },
   "startup" => {
     "times" => startup_times
@@ -200,7 +205,7 @@ test_data = {
 
 json_filename = "#{out_dir}/rails_ruby_bench_#{Time.now.to_i}.json"
 File.open(json_filename, "w") do |f|
-  f.print JSON.dump(test_data)
+  f.print JSON.pretty_generate(test_data)
   f.print "\n"
 end
 print "Wrote run data to #{json_filename}.\n"
