@@ -47,7 +47,7 @@
             "RUBY_GIT_URL=https://github.com/ruby/ruby.git",
             "RUBY_TAG=",
             "RUBY_SYSTEM_PATH=",
-            "OTHER_RUBIES=2.1,2.2,2.3,2.4"
+            "OTHER_RUBIES=2.0,2.1,2.2,2.3,2.4"
         ],
         "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} ruby {{ .Path }}",
         "script": "setup.rb"
