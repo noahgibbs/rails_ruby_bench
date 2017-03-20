@@ -55,21 +55,23 @@ Dir.chdir(RUBY_DIR) do
 end
 system("rvm mount #{RUBY_INSTALL_DIR} -n benchmark-ruby") || raise("Couldn't mount #{RUBY_DIR.inspect} as benchmark-ruby!")
 system("rvm use --default ext-benchmark-ruby") || raise("Couldn't set ext-benchmark-ruby to rvm default!")
-system("cd #{RAILS_BENCH_DIR} && bundle") || raise("Failed running bundler in #{RAILS_BENCH_DIR.inspect}")
-system("cd #{DISCOURSE_DIR} && bundle") || raise("Failed running bundler in #{DISCOURSE_DIR.inspect}")
+Dir.chdir(RAILS_BENCH_DIR) { system("bash -l -c \"bundle\"") }
+Dir.chdir(DISCOURSE_DIR) { system("bash -l -c \"bundle\"") }
 
 # If OTHER_RUBIES contains anything, install them via RVM. Useful for benchmarking multiple Rubies.
 OTHER_RUBIES.split(",").compact.each do |other_ruby_version|
   system("bash -l -c \"rvm install #{other_ruby_version}\"") || raise("Couldn't use RVM to install #{other_ruby_version.inspect}!")
-  system("cd #{RAILS_BENCH_DIR} && rvm use #{other_ruby_version} && bundle") || raise("Failed running bundler under ruby #{other_ruby_version} in #{RAILS_BENCH_DIR.inspect}")
-  system("cd #{DISCOURSE_DIR} && rvm use #{other_ruby_version} && bundle") || raise("Failed running bundler under ruby #{other_ruby_version} in #{DISCOURSE_DIR.inspect}")
+  Dir.chdir(RAILS_BENCH_DIR) do
+    system("bash -l -c \"rvm use #{other_ruby_version} && gem install bundler && bundle\"")
+  end
+  Dir.chdir(DISCOURSE_DIR) do
+    system("bash -l -c \"rvm use #{other_ruby_version} && bundle\"")
+  end
 end
 
 Dir.chdir(DISCOURSE_DIR) do
   system("RAILS_ENV=profile bundle exec rake db:create")  # Don't check for failure
   system("RAILS_ENV=profile bundle exec rake db:migrate") || raise("Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!")
-  #system("RAILS_ENV=profile bundle exec rake admin:create")  # This needs user input
-  #system("RAILS_ENV=profile bundle exec rake db:seed_fu")
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
