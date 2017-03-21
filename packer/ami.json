@@ -72,6 +72,5 @@
 	"type": "shell",
 	"inline": "sudo mv /tmp/nginx.default.conf /etc/nginx/sites-available/default"
     }
-  ],
-  "post-processors": [{"type": "vagrant", "keep_input_artifact": true}]
+  ]
 }
