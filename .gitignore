@@ -1,4 +1,4 @@
 work/discourse
 work/ruby
 packer/ec2_amazon-ebs.pem
-packer/*.box
+
