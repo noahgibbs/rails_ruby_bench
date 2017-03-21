@@ -48,11 +48,11 @@ OptionParser.new do |opts|
   opts.on("-o", "--out-dir DIRECTORY", "directory to write JSON output to") do |d|
     out_dir = d
   end
-  opts.on("-t", "--threads-per-server", "number of Puma threads per server process") do |t|
-    puma_threads = t
+  opts.on("-t", "--threads-per-server NUMBER", "number of Puma threads per server process") do |t|
+    puma_threads = t.to_i
   end
-  opts.on("-c", "--cluster-processes", "number of Puma processes in cluster mode") do |c|
-    puma_processes = c
+  opts.on("-c", "--cluster-processes NUMBER", "number of Puma processes in cluster mode") do |c|
+    puma_processes = c.to_i
   end
 end.parse!
 
