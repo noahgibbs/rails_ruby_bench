@@ -8,6 +8,8 @@ Generate all data w/ a single seed and divide between threads to make sure all r
 
 Figure out what the "final composite" score should look like. Right now, just looking at execution time per thread.
 
-Try Puma in clustered mode w/ more than one MRI process
+## Small, Specific Fixes
 
 Add Charles Nutter to "to thank" list in blog post
+
+Right now, ext-benchmark-ruby isn't being set default correctly and doesn't have the bundler gem installed where it can see it.
