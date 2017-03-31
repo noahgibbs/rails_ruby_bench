@@ -13,3 +13,5 @@ Figure out what the "final composite" score should look like. Right now, just lo
 Add Charles Nutter to "to thank" list in blog post
 
 Right now, ext-benchmark-ruby isn't being set default correctly and doesn't have the bundler gem installed where it can see it.
+
+Update pool to 30+ in discourse/config/database.yml

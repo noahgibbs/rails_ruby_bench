@@ -16,20 +16,30 @@ OTHER_RUBIES         = ENV["OTHER_RUBIES"]
 # TODO:
 # * Review Postgres setup - complete?
 
+# Checked system - error if the command fails
+def csystem(cmd, err)
+  out = `#{cmd}`
+  unless $?.success?
+    print "Error running command:\n#{cmd.inspect}\nOutput:\n#{out}\n=====\n"
+    raise err
+  end
+  out
+end
+
 def clone_or_update_repo(repo_url, tag, work_dir)
   tag = tag.strip
   if File.exist?(work_dir)
     Dir.chdir(work_dir) do
-      system("git pull") || raise("Couldn't 'git pull' in #{work_dir}!")
+      csystem "git pull", "Couldn't 'git pull' in #{work_dir}!"
     end
   elsif tag && tag != ""
     cmd = "git clone #{repo_url} -b #{tag} #{work_dir}"
     puts "Command: #{cmd.inspect}"
-    system(cmd) || raise("Couldn't 'git clone' at tag/branch #{tag.inspect} into #{work_dir}!")
+    csystem cmd, "Couldn't 'git clone' at tag/branch #{tag.inspect} into #{work_dir}!"
   else
     cmd = "git clone #{repo_url} #{work_dir}"
     puts "Command: #{cmd.inspect}"
-    system(cmd) || raise("Couldn't 'git clone' into #{work_dir}!")
+    csystem cmd, "Couldn't 'git clone' into #{work_dir}!"
   end
 
 end
@@ -41,41 +51,44 @@ RUBY_DIR = File.join(RAILS_BENCH_DIR, "work", "ruby")
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
 clone_or_update_repo RUBY_GIT_URL, RUBY_TAG, RUBY_DIR
 
-system("sudo mkdir -p #{RUBY_INSTALL_DIR} && sudo chown -R ubuntu #{RUBY_INSTALL_DIR}") # Give a spot to install ruby to
+# Give a spot to install ruby to
+csystem "sudo mkdir -p #{RUBY_INSTALL_DIR} && sudo chown -R ubuntu #{RUBY_INSTALL_DIR}",
+  "Couldn't create dir #{RUBY_INSTALL_DIR.inspect} to install Ruby to!"
 
 Dir.chdir(RUBY_DIR) do
   unless File.exists?("configure")
-    system("autoconf") || raise("Couldn't run autoconf in #{RUBY_DIR}!")
+    csystem "autoconf", "Couldn't run autoconf in #{RUBY_DIR}!"
   end
   unless File.exists?("Makefile")
-    system("./configure --prefix #{RUBY_INSTALL_DIR}") || raise("Couldn't run configure in #{RUBY_DIR}!")
+    csystem "./configure --prefix #{RUBY_INSTALL_DIR}", "Couldn't run configure in #{RUBY_DIR}!"
   end
-  system("make") || raise("Make failed in #{RUBY_DIR}!")
-  system("make install") || raise("Installing Ruby failed in #{RUBY_DIR}!") # This should install to the benchmark ruby dir
+  csystem "make", "Make failed in #{RUBY_DIR}!"
+  # This should install to the benchmark ruby dir
+  csystem "make install", "Installing Ruby failed in #{RUBY_DIR}!"
 end
-system("rvm mount #{RUBY_INSTALL_DIR} -n benchmark-ruby") || raise("Couldn't mount #{RUBY_DIR.inspect} as benchmark-ruby!")
-system("rvm use --default ext-benchmark-ruby") || raise("Couldn't set ext-benchmark-ruby to rvm default!")
+system "rvm mount #{RUBY_INSTALL_DIR} -n benchmark-ruby", "Couldn't mount #{RUBY_DIR.inspect} as benchmark-ruby!"
+system "bash -l -c \"rvm use --default ext-benchmark-ruby\"", "Couldn't set ext-benchmark-ruby to rvm default!"
 Dir.chdir(RAILS_BENCH_DIR) { system("bash -l -c \"bundle\"") }
 Dir.chdir(DISCOURSE_DIR) { system("bash -l -c \"bundle\"") }
 
 # If OTHER_RUBIES contains anything, install them via RVM. Useful for benchmarking multiple Rubies.
 OTHER_RUBIES.split(",").compact.each do |other_ruby_version|
-  system("bash -l -c \"rvm install #{other_ruby_version}\"") || raise("Couldn't use RVM to install #{other_ruby_version.inspect}!")
+  csystem "bash -l -c \"rvm install #{other_ruby_version}\"", "Couldn't use RVM to install #{other_ruby_version.inspect}!"
   Dir.chdir(RAILS_BENCH_DIR) do
-    system("bash -l -c \"rvm use #{other_ruby_version} && gem install bundler && bundle\"")
+    csystem "bash -l -c \"rvm use #{other_ruby_version} && gem install bundler && bundle\"", "Couldn't install bundler or gems for #{RAILS_BENCH_DIR}!"
   end
   Dir.chdir(DISCOURSE_DIR) do
-    system("bash -l -c \"rvm use #{other_ruby_version} && bundle\"")
+    csystem "bash -l -c \"rvm use #{other_ruby_version} && bundle\"", "Couldn't install bundler or gems for #{DISCOURSE_DIR}!"
   end
 end
 
 Dir.chdir(DISCOURSE_DIR) do
-  system("RAILS_ENV=profile bundle exec rake db:create")  # Don't check for failure
-  system("RAILS_ENV=profile bundle exec rake db:migrate") || raise("Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!")
+  csystem "RAILS_ENV=profile bundle exec rake db:create", "Couldn't create Rails database!"
+  csystem "RAILS_ENV=profile bundle exec rake db:migrate", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!"
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
-    system("RAILS_ENV=profile rake assets:precompile") || raise("Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!")
+    csystem "RAILS_ENV=profile rake assets:precompile", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
   end
   unless File.exists? "public/uploads"
     FileUtils.mkdir "public/uploads"
@@ -92,4 +105,5 @@ unless File.exists?(ASSETS_INIT)
   end
 end
 
-system("cd rails_ruby_bench && RAILS_ENV=profile ruby seed_db_data.rb") || raise("Couldn't seed the database with profiling sample data!")
+csystem "cd rails_ruby_bench && RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!"
+csystem "bash -l -c \"rvm use --default ext-benchmark-ruby\"", "Couldn't set ext-benchmark-ruby to rvm default!"
