@@ -66,8 +66,8 @@ Dir.chdir(RUBY_DIR) do
   # This should install to the benchmark ruby dir
   csystem "make install", "Installing Ruby failed in #{RUBY_DIR}!"
 end
-system "rvm mount #{RUBY_INSTALL_DIR} -n benchmark-ruby", "Couldn't mount #{RUBY_DIR.inspect} as benchmark-ruby!"
-system "bash -l -c \"rvm use --default ext-benchmark-ruby\"", "Couldn't set ext-benchmark-ruby to rvm default!"
+csystem "bash -l -c \"rvm mount #{RUBY_INSTALL_DIR} -n ruby-benchmark\"", "Couldn't mount #{RUBY_DIR.inspect} as ruby-benchmark!"
+csystem "bash -l -c \"rvm use --default ext-ruby-benchmark\"", "Couldn't set ext-ruby-benchmark to rvm default!"
 Dir.chdir(RAILS_BENCH_DIR) { system("bash -l -c \"bundle\"") }
 Dir.chdir(DISCOURSE_DIR) { system("bash -l -c \"bundle\"") }
 
@@ -106,4 +106,4 @@ unless File.exists?(ASSETS_INIT)
 end
 
 csystem "cd rails_ruby_bench && RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!"
-csystem "bash -l -c \"rvm use --default ext-benchmark-ruby\"", "Couldn't set ext-benchmark-ruby to rvm default!"
+csystem "bash -l -c \"rvm use --default ext-ruby-benchmark\"", "Couldn't set ext-ruby-benchmark to rvm default!"
