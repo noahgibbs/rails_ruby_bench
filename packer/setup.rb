@@ -93,6 +93,13 @@ Dir.chdir(DISCOURSE_DIR) do
   unless File.exists? "public/uploads"
     FileUtils.mkdir "public/uploads"
   end
+  conf_db = File.read "config/database.yml"
+  new_contents = conf_db.gsub("pool: 5", "pool: 30")  # Increase database.yml thread pool, including for profile environment
+  if new_contents != conf_db
+    File.open("config/database.yml", "w") do |f|
+      f.print new_contents
+    end
+  end
 end
 
 # Minor bugfix for this version of Discourse. Can remove later?
