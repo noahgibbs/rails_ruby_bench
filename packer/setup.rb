@@ -68,8 +68,8 @@ Dir.chdir(RUBY_DIR) do
 end
 csystem "bash -l -c \"rvm mount #{RUBY_INSTALL_DIR} -n ruby-benchmark\"", "Couldn't mount #{RUBY_DIR.inspect} as ruby-benchmark!"
 csystem "bash -l -c \"rvm use --default ext-ruby-benchmark\"", "Couldn't set ext-ruby-benchmark to rvm default!"
-Dir.chdir(RAILS_BENCH_DIR) { system("bash -l -c \"bundle\"") }
-Dir.chdir(DISCOURSE_DIR) { system("bash -l -c \"bundle\"") }
+Dir.chdir(RAILS_BENCH_DIR) { csystem("bash -l -c \"gem install bundle && bundle\"", "Couldn't install bundler and gems") }
+Dir.chdir(DISCOURSE_DIR) { csystem("bash -l -c \"bundle\"", "Couldn't install bundler and gems") }
 
 # If OTHER_RUBIES contains anything, install them via RVM. Useful for benchmarking multiple Rubies.
 OTHER_RUBIES.split(",").compact.each do |other_ruby_version|
