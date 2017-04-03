@@ -4,14 +4,8 @@ AWS measurements - measure degree of noisy neighbors. Measure vs dedicated insta
 
 Go through a full run of test data, printing out exactly what it does, and find all the problems. Also, view Discourse after a full run and see all the problems.
 
-Generate all data w/ a single seed and divide between threads to make sure all runs w/ N iterations give same set of requests. How to order, though? The current "latest posts" mechanism doesn't coordinate that way, nor should it...
-
-Figure out what the "final composite" score should look like. Right now, just looking at execution time per thread.
+Figure out what the "final composite" score should look like. Right now, just looking at execution time for threads.
 
 ## Small, Specific Fixes
 
-Add Charles Nutter to "to thank" list in blog post
-
-Right now, ext-benchmark-ruby isn't being set default correctly and doesn't have the bundler gem installed where it can see it.
-
-Update pool to 30+ in discourse/config/database.yml
+Generate all data w/ a single seed and divide between threads to make sure all runs w/ N iterations give same set of requests. How to order, though? The current "latest posts" mechanism doesn't coordinate that way, nor should it...
