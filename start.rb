@@ -19,11 +19,11 @@ startup_iters = 2
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
 worker_iterations = 300
 warmup_iterations = 0   # Right now, doesn't work. Need to fix when changing to threads.
-workers = 5
+workers = 30
 port_num = 4567
 out_dir = "/tmp"
-puma_processes = 1
-puma_threads = 8
+puma_processes = 10
+puma_threads = 6
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby start.rb [options]"
