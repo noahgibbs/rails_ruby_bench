@@ -70,9 +70,7 @@ Dir.chdir(RUBY_DIR) do
 end
 csystem "bash -l -c \"rvm mount #{RUBY_INSTALL_DIR} -n ruby-benchmark\"", "Couldn't mount #{RUBY_DIR.inspect} as ruby-benchmark!"
 csystem "bash -l -c \"rvm use --default ext-ruby-benchmark\"", "Couldn't set ext-ruby-benchmark to rvm default!"
-#Dir.chdir(RAILS_BENCH_DIR) { csystem("gem env", "Couldn't gem env!", debug: true) }
 Dir.chdir(RAILS_BENCH_DIR) { csystem("bash -l -c \"rvm use ext-ruby-benchmark && gem install bundle && bundle\"", "Couldn't install bundler and gems", debug: true) }
-#Dir.chdir(DISCOURSE_DIR) { csystem("gem env", "Couldn't gem env!", debug: true) }
 Dir.chdir(DISCOURSE_DIR) { csystem("bash -l -c \"rvm use ext-ruby-benchmark && bundle\"", "Couldn't install bundler and gems", debug: true) }
 
 # If OTHER_RUBIES contains anything, install them via RVM. Useful for benchmarking multiple Rubies.
@@ -87,12 +85,12 @@ OTHER_RUBIES.split(",").compact.each do |other_ruby_version|
 end
 
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:create\"", "Couldn't create Rails database!"
-  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:migrate\"", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!"
+  csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile bundle exec rake db:create\"", "Couldn't create Rails database!"
+  csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile bundle exec rake db:migrate\"", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!"
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
-    csystem "bash -l -c \"RAILS_ENV=profile rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
+    csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
   end
   unless File.exists? "public/uploads"
     FileUtils.mkdir "public/uploads"
@@ -117,5 +115,5 @@ unless File.exists?(ASSETS_INIT)
 end
 
 Dir.chdir("rails_ruby_bench") do
-  csystem "bash -l -c \"RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
+  csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
 end
