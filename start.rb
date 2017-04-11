@@ -1,10 +1,6 @@
 #!/usr/bin/env ruby
 
-# Start the Rails server and measure time to first request.
-
-# TODO: add command-line options for:
-#
-# * port number of Rails server
+# Start the Rails server and measure time to first request and request processing times.
 
 require 'optparse'
 require 'rest-client'
@@ -175,10 +171,11 @@ print "Median: #{startup_times.sort[ startup_times.size / 2 ] }\n"
 print "Raw times: #{startup_times.inspect}\n"
 
 print "===== Startup Benchmarks =====\n"
-print "Longest run: #{worker_times.max}\n"
-print "Shortest run: #{worker_times.min}\n"
-print "Mean: #{worker_times.inject(0.0, &:+) / worker_times.size}\n"
-print "Median: #{worker_times.sort[ worker_times.size / 2 ] }\n"
+worker_times_max = worker_times.map(:max)
+print "Slowest thread run: #{worker_times_max.max}\n"
+print "Fastest thread run: #{worker_times_max.min}\n"
+print "Mean thread run: #{worker_times_max.inject(0.0, &:+) / worker_times.size}\n"
+print "Median thread run: #{worker_times_max.sort[ worker_times.size / 2 ] }\n"
 print "Raw times: #{worker_times.inspect}\n"
 
 test_data = {

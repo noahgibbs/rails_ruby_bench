@@ -14,20 +14,6 @@
 #  :out_dir => "/tmp",
 #}
 
-# We want our script to generate a consistent output, so we
-# monkeypatch Array#sample to use our RNG. That's what Gabbler
-# uses. So we use thread-local RNGs, to allow consistent per-thread
-# results. Also, ew.  We may want to inline Gabbler's functionality or
-# otherwise avoid this problem in the future.
-# TODO: this whole idea is wrongheaded. Randomize the big array of
-# actions *first*, then divide between worker queues while everything is
-# still single-threaded.
-class Array
-  def sample
-    self[Thread.current["RNG"].rand(size)]
-  end
-end
-
 def sentence
   @gabbler ||= Gabbler.new.tap do |gabbler|
     story = File.read(File.dirname(__FILE__) + "/alice.txt")
@@ -138,17 +124,7 @@ def log(s)
   print "[#{Process.pid}]: #{s}\n"
 end
 
-def worker_thread(options)
-  rng = Thread.current["RNG"]
-  # Randomize which action(s) to take, and randomize topic and reply
-  # data, plus a random number for offsets.  Since we don't randomize
-  # again after this, the random seed's effect is limited to this line
-  # and before.  Each array starts with an action number starting with
-  # action 1, up to the number of iterations plus the number of warmup
-  # iterations. Then it has an action type, a sentence (not always used)
-  # and a floating-point argument (not always used.)
-  actions = (1..(options[:iterations] + options[:warmup_iterations])).map { |i| [ ACTIONS.sample, sentence, rng.rand() ] }
-
+def worker_thread(actions, options)
   user = User.offset(options[:user_offset]).first
   unless user
     print "No user at offset #{options[:user_offset].inspect}! Exiting.\n"
@@ -161,30 +137,36 @@ def worker_thread(options)
   client = DiscourseClient.new(options)
   client.get_csrf_token
 
-  log "Logging in as #{user.username.inspect}..."
+  log "Logging in as #{user.username.inspect}... (not part of benchmark request time(s))"
   client.request :post, "/session", { "login" => user.username, "password" => "password" }
   client.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "http://localhost:#{options[:port_num]}/" }
 
-  # Do these iterations but don't time them.
+  # Do these iterations but don't (yet) time them.
   options[:warmup_iterations].times do |i|
     client.action_from_args *actions[i]
   end
 
+  times = []
   t0 = Time.now
   options[:iterations].times do |i|
     client.action_from_args *actions[i + options[:warmup_iterations]]
+    times.push (Time.now - t0)
   end
-  iteration_time = Time.now - t0
+  times.push (Time.now - t0)
+  times
 end
 
 def run_trials(options)
   output_times = []
 
+  actions = (1..(options[:iterations] + options[:warmup_iterations])).map { |i| [ ACTIONS.sample, sentence, rng.rand() ] }
+  actions_per_thread = (actions.size + options[:worker_threads] - 1) / options[:worker_threads]  # Round up
+
   threads = (1..options[:worker_threads]).map do |offset|
     Thread.new do
-      Thread.current["RNG"] = Random.new(options[:random_seed] + offset * 100)
       begin
-        output_times << worker_thread(options.merge(:user_offset => offset))
+        my_actions = actions[ (actions_per_thread * offset) .. (actions_per_thread * (offset + 1) - 1) ]
+        output_times << worker_thread(my_actions, options.merge(:user_offset => offset))
       rescue Exception => e
         STDERR.print "Exception in worker thread: #{e.message}\n#{e.backtrace.join("\n")}\n"
         raise e # Re-raise the exception
