@@ -148,21 +148,10 @@ startup_times = (1..startup_iters).map { full_iteration_start_stop }
 request_times = nil
 
 worker_times = []
+warmup_times = []
 
 with_running_server do
-
-  options = {
-    :random_seed => RANDOM_SEED,
-    :delay => nil,
-    :iterations => worker_iterations,
-    :warmup_iterations => warmup_iterations,
-    :port_num => PORT_NUM,
-    :worker_threads => workers,
-    :out_dir => "/tmp",
-  }
-
   # First, warmup iterations.
-  warmup_times = []
   warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) if warmup_iterations != 0
   # Second, real iterations.
   worker_times = multithreaded_actions worker_iterations, workers, PORT_NUM
@@ -176,7 +165,7 @@ print "Median: #{startup_times.sort[ startup_times.size / 2 ] }\n"
 print "Raw times: #{startup_times.inspect}\n"
 
 print "===== Startup Benchmarks =====\n"
-worker_times_max = worker_times.map(:max)
+worker_times_max = worker_times.map(&:max)
 print "Slowest thread run: #{worker_times_max.max}\n"
 print "Fastest thread run: #{worker_times_max.min}\n"
 print "Mean thread run: #{worker_times_max.inject(0.0, &:+) / worker_times.size}\n"

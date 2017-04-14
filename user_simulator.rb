@@ -156,7 +156,7 @@ def multithreaded_actions(iterations, worker_threads, port_num)
   output_times = []
 
   actions = (1..iterations).map { |i| [ ACTIONS.sample, sentence, rand() ] }
-  actions_per_thread = (actions.size + worker_threads - 1) / worker_threads  # Round up
+  actions_per_thread = (iterations + worker_threads - 1) / worker_threads  # Round up
 
   threads = (1..worker_threads).map do |offset|
     Thread.new do
@@ -164,9 +164,14 @@ def multithreaded_actions(iterations, worker_threads, port_num)
         # Grab just this one thread's worth of actions
         my_actions = actions[ (actions_per_thread * offset) .. (actions_per_thread * (offset + 1) - 1) ]
 
-        thread_times = time_actions(my_actions, offset, options[:port_num])
-        output_mutex.sync do
-          output_times << thread_times
+        # Only a few warmup iterations with lots of load threads? In that case, rounding error can result
+        # in a few "empty" threads at high offsets. In that case, you have "too many" threads - just
+        # have the ones with no work assigned do nothing.
+        unless my_actions == nil
+          thread_times = time_actions(my_actions, offset, port_num)
+          output_mutex.synchronize do
+            output_times << thread_times
+          end
         end
       rescue Exception => e
         STDERR.print "Exception in worker thread: #{e.message}\n#{e.backtrace.join("\n")}\n"
