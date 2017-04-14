@@ -13,7 +13,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/confi
 
 startup_iters = 2
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
-worker_iterations = 300
+worker_iterations = 1500  # All iterations, spread between load-test worker threads
 warmup_iterations = 0  # Need to test warmup iterations properly...
 workers = 30
 port_num = 4567
