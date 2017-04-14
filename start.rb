@@ -14,7 +14,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/confi
 startup_iters = 2
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
 worker_iterations = 300
-warmup_iterations = 0   # Right now, doesn't work. Need to fix when changing to threads.
+warmup_iterations = 0  # Need to test warmup iterations properly...
 workers = 30
 port_num = 4567
 out_dir = "/tmp"
@@ -58,6 +58,7 @@ raise "No such output directory!" unless File.directory?(out_dir)
 PORT_NUM = port_num
 PUMA_THREADS = puma_threads
 PUMA_PROCESSES = puma_processes
+RANDOM_SEED = random_seed
 
 def server_start
   # Start the server
@@ -151,7 +152,7 @@ worker_times = []
 with_running_server do
 
   options = {
-    :random_seed => 1234567890,
+    :random_seed => RANDOM_SEED,
     :delay => nil,
     :iterations => worker_iterations,
     :warmup_iterations => warmup_iterations,
@@ -160,7 +161,11 @@ with_running_server do
     :out_dir => "/tmp",
   }
 
-  worker_times = run_trials options
+  # First, warmup iterations.
+  warmup_times = []
+  warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) if warmup_iterations != 0
+  # Second, real iterations.
+  worker_times = multithreaded_actions worker_iterations, workers, PORT_NUM
 end # Stop the Rails server after all user simulators have exited.
 
 print "===== Startup Benchmarks =====\n"
@@ -195,9 +200,12 @@ test_data = {
   "startup" => {
     "times" => startup_times
   },
+  "warmup" => {
+    "times" => warmup_times
+  },
   "requests" => {
     "times" => worker_times
-  }
+  },
 }
 
 json_filename = "#{out_dir}/rails_ruby_bench_#{Time.now.to_i}.json"

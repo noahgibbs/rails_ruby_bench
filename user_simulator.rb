@@ -124,49 +124,50 @@ def log(s)
   print "[#{Process.pid}]: #{s}\n"
 end
 
-def worker_thread(actions, options)
-  user = User.offset(options[:user_offset]).first
+def time_actions(actions, user_offset, port_num)
+  user = User.offset(user_offset).first
   unless user
-    print "No user at offset #{options[:user_offset].inspect}! Exiting.\n"
+    print "No user at offset #{user_offset.inspect}! Exiting.\n"
     exit -1
   end
 
   log "Simulating activity for user id #{user.id}: #{user.name}"
 
   log "Getting Rails CSRF token..."
-  client = DiscourseClient.new(options)
+  client = DiscourseClient.new(port_num: port_num)
   client.get_csrf_token
 
   log "Logging in as #{user.username.inspect}... (not part of benchmark request time(s))"
   client.request :post, "/session", { "login" => user.username, "password" => "password" }
-  client.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "http://localhost:#{options[:port_num]}/" }
-
-  # Do these iterations but don't (yet) time them.
-  options[:warmup_iterations].times do |i|
-    client.action_from_args *actions[i]
-  end
+  client.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "http://localhost:#{port_num}/" }
 
   times = []
   t0 = Time.now
-  options[:iterations].times do |i|
-    client.action_from_args *actions[i + options[:warmup_iterations]]
+  actions.each do |action|
+    client.action_from_args *action
     times.push (Time.now - t0)
   end
   times.push (Time.now - t0)
   times
 end
 
-def run_trials(options)
+def multithreaded_actions(iterations, worker_threads, port_num)
+  output_mutex = Mutex.new
   output_times = []
 
-  actions = (1..(options[:iterations] + options[:warmup_iterations])).map { |i| [ ACTIONS.sample, sentence, rng.rand() ] }
-  actions_per_thread = (actions.size + options[:worker_threads] - 1) / options[:worker_threads]  # Round up
+  actions = (1..iterations).map { |i| [ ACTIONS.sample, sentence, rand() ] }
+  actions_per_thread = (actions.size + worker_threads - 1) / worker_threads  # Round up
 
-  threads = (1..options[:worker_threads]).map do |offset|
+  threads = (1..worker_threads).map do |offset|
     Thread.new do
       begin
+        # Grab just this one thread's worth of actions
         my_actions = actions[ (actions_per_thread * offset) .. (actions_per_thread * (offset + 1) - 1) ]
-        output_times << worker_thread(my_actions, options.merge(:user_offset => offset))
+
+        thread_times = time_actions(my_actions, offset, options[:port_num])
+        output_mutex.sync do
+          output_times << thread_times
+        end
       rescue Exception => e
         STDERR.print "Exception in worker thread: #{e.message}\n#{e.backtrace.join("\n")}\n"
         raise e # Re-raise the exception
@@ -174,6 +175,6 @@ def run_trials(options)
     end
   end
 
-  threads.each { |t| t.join }
+  threads.each(&:join)
   output_times
 end
