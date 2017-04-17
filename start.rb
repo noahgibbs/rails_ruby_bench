@@ -60,6 +60,8 @@ PUMA_THREADS = puma_threads
 PUMA_PROCESSES = puma_processes
 RANDOM_SEED = random_seed
 
+DISCOURSE_REVISION = `cd work/discourse && git rev-parse HEAD`.chomp
+
 def server_start
   # Start the server
   @started_pid = fork do
@@ -181,7 +183,8 @@ test_data = {
     "puma_processes" => puma_processes,
     "puma_threads" => puma_threads,
     "port_num" => port_num,
-    "out_dir" => out_dir
+    "out_dir" => out_dir,
+    "discourse_revision" => DISCOURSE_REVISION,
   },
   "environment" => {
     "RUBY_VERSION" => RUBY_VERSION,

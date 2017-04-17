@@ -19,6 +19,13 @@
             "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done"
         ]
     }, {
+	"type": "file",
+	"source": "ami.json",
+	"destination": "/tmp/ami.json"
+    }, {
+        "type": "shell",
+	"inline": "sudo mv /tmp/ami.json /etc/ami.json"
+    }, {
         "type": "shell",
         "script": "discourse_install.sh"
     }, {
