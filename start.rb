@@ -68,7 +68,7 @@ def server_start
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
     Dir.chdir "work/discourse"
     # Start Puma in a new process group to easily kill subprocesses if necessary
-    exec({ "RAILS_ENV" => "profile" }, "puma", "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", PUMA_THREADS.to_s, :pgroup => true)
+    exec({ "RAILS_ENV" => "profile" }, "puma", "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "0:#{PUMA_THREADS}", :pgroup => true)
   end
 end
 
