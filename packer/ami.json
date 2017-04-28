@@ -1,7 +1,8 @@
 {
     "variables": {
         "aws_access_key": "",
-        "aws_secret_key": ""
+        "aws_secret_key": "",
+        "builder_suffix": ""
     },
     "builders": [{
         "type": "amazon-ebs",
@@ -11,7 +12,10 @@
         "source_ami": "ami-6edd3078",
         "instance_type": "t2.micro",
         "ssh_username": "ubuntu",
-        "ami_name": "rails-ruby-benchmark {{timestamp}}"
+        "ami_name": "rails-ruby-benchmark {{timestamp}}",
+	"run_tags": {
+	    "Name": "Packer RailsRubyBench Builder{{user `builder_suffix`}}"
+	}
     }],
     "provisioners": [{
         "type": "shell",
