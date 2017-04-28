@@ -117,3 +117,8 @@ end
 Dir.chdir("rails_ruby_bench") do
   csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
 end
+
+# And check to make sure the benchmark actually runs... But just do a few iterations.
+Dir.chdir("rails_ruby_bench") do
+  csystem "bash -l -c \"rvm use ext-ruby-benchmark && ./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1\"", "Couldn't successfully run the benchmark!"
+end
