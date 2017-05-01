@@ -47,6 +47,7 @@ req_time_by_ver.keys.sort.each do |version|
   runs = run_by_ver[version]
   flat_runs = runs.flatten.sort
   run_longest = runs.map { |worker_times| worker_times.max }
+  throughputs = throughput_by_ver[version].sort
 
   print "=====\nRuby Version: #{version}, data points: #{data.size}, full runs: #{runs.size}\n"
   [0, 1, 5, 10, 50, 90, 95, 99, 100].each do |p|
@@ -59,7 +60,8 @@ req_time_by_ver.keys.sort.each do |version|
   end
 
   print "--\n  Throughput in reqs/sec for each full run:\n"
-  print "  #{throughput_by_ver[version].inspect}"
+  print "  Mean: #{throughputs.inject(0.0, &:+) / throughputs.size} Median: #{percentile(throughputs, 50)}\n"
+  print "  #{throughputs.inspect}"
 end
 
 print "******************\n"
