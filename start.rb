@@ -118,6 +118,7 @@ def with_running_server
         return
       else
         failed_iters += 1
+        raise "Too many failed iterations!" if failed_iters > 5_000
       end
     end
   end
@@ -153,9 +154,11 @@ worker_times = []
 warmup_times = []
 
 with_running_server do
+  print "Warmup iterations...\n"
   # First, warmup iterations.
   warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) if warmup_iterations != 0
   # Second, real iterations.
+  print "Real iterations...\n"
   worker_times = multithreaded_actions worker_iterations, workers, PORT_NUM
 end # Stop the Rails server after all user simulators have exited.
 
