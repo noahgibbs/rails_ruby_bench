@@ -16,13 +16,15 @@ OTHER_RUBIES         = ENV["OTHER_RUBIES"]
 # TODO:
 # * Review Postgres setup - complete?
 
+class SystemPackerBuildError < RuntimeError; end
+
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
   out = `#{cmd}`
   print "Running command: #{cmd.inspect}" if opts[:debug] || opts["debug"]
   unless $?.success? || opts[:fail_ok] || opts["fail_ok"]
     print "Error running command:\n#{cmd.inspect}\nOutput:\n#{out}\n=====\n"
-    raise err
+    raise SystemPackerBuildError.new(err)
   end
   print "Command output:\n#{out}\n=====\n" if opts[:debug] || opts["debug"]
   out
@@ -120,5 +122,13 @@ end
 
 # And check to make sure the benchmark actually runs... But just do a few iterations.
 Dir.chdir("rails_ruby_bench") do
-  csystem "bash -l -c \"rvm use ext-ruby-benchmark && ./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1\"", "Couldn't successfully run the benchmark!"
+  begin
+    csystem "bash -l -c \"rvm use ext-ruby-benchmark && ./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1\"", "Couldn't successfully run the benchmark!"
+  rescue SystemPackerBuildError
+    # Before dying, let's look at that Rails logfile... Redirect stdout to stderr.
+    print "Error running test iterations of the benchmark, printing Rails log to console!\n==========\n"
+    print `tail -80 work/discourse/log/profile.log`   # If we echo too many lines they just get cut off by Packer
+    print "=============\n"
+    raise # Re-raise the error, we still want to die.
+  end
 end
