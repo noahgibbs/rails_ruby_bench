@@ -4,6 +4,7 @@ require "json"
 
 req_time_by_ver = {}
 run_by_ver = {}
+throughput_by_ver = {}
 
 Dir["*.json"].each do |f|
   d = JSON.load File.read(f)
@@ -17,11 +18,16 @@ Dir["*.json"].each do |f|
     end
     out_items
   end
+  runs = d["requests"]["times"].map { |thread_times| thread_times[-1] }
+
   req_time_by_ver[rv] ||= []
   req_time_by_ver[rv].concat times
 
   run_by_ver[rv] ||= []
-  run_by_ver[rv].push d["requests"]["times"].map { |thread_times| thread_times[-1] }
+  run_by_ver[rv].push runs
+
+  throughput_by_ver[rv] ||= []
+  throughput_by_ver[rv].push d["requests"]["times"].flatten.size / runs.max
 end
 
 def percentile(list, pct)
@@ -40,6 +46,7 @@ req_time_by_ver.keys.sort.each do |version|
   data.sort!
   runs = run_by_ver[version]
   flat_runs = runs.flatten.sort
+  run_longest = runs.map { |worker_times| worker_times.max }
 
   print "=====\nRuby Version: #{version}, data points: #{data.size}, full runs: #{runs.size}\n"
   [0, 1, 5, 10, 50, 90, 95, 99, 100].each do |p|
@@ -50,6 +57,9 @@ req_time_by_ver.keys.sort.each do |version|
   [0, 10, 50, 90, 100].each do |p|
     print "  #{"%2d" % p}%ile: #{percentile(flat_runs, p)}\n"
   end
+
+  print "--\n  Throughput in reqs/sec for each full run:\n"
+  print "  #{throughput_by_ver[version].inspect}"
 end
 
 print "******************\n"
