@@ -182,6 +182,7 @@ test_data = {
     "startup_iters" => startup_iters,
     "random_seed" => random_seed,
     "worker_iterations" => worker_iterations,
+    "warmup_iterations" => warmup_iterations,
     "workers" => workers,
     "puma_processes" => puma_processes,
     "puma_threads" => puma_threads,
