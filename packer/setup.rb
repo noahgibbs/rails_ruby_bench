@@ -10,13 +10,24 @@ DISCOURSE_GIT_URL    = ENV["DISCOURSE_GIT_URL"]
 DISCOURSE_TAG        = ENV["DISCOURSE_TAG"]
 RUBY_GIT_URL         = ENV["RUBY_GIT_URL"]
 RUBY_TAG             = ENV["RUBY_TAG"]
-RUBY_SYSTEM_PATH     = ENV["RUBY_SYSTEM_PATH"]
 OTHER_RUBIES         = ENV["OTHER_RUBIES"]
 
 # TODO:
 # * Review Postgres setup - complete?
 
 class SystemPackerBuildError < RuntimeError; end
+
+print <<SETUP
+=========
+Running setup.rb for Ruby-related software.
+RAILS_RUBY_BENCH_URL: #{RAILS_RUBY_BENCH_URL.inspect}
+DISCOURSE_GIT_URL: #{DISCOURSE_GIT_URL.inspect}
+DISCOURSE_TAG: #{DISCOURSE_TAG.inspect}
+RUBY_GIT_URL: #{RUBY_GIT_URL.inspect}
+RUBY_TAG: #{RUBY_TAG.inspect}
+OTHER_RUBIES: #{OTHER_RUBIES.inspect}
+=========
+SETUP
 
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
