@@ -159,7 +159,7 @@ with_running_server do
   warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) if warmup_iterations != 0
   # Second, real iterations.
   print "Real iterations...\n"
-  worker_times = multithreaded_actions worker_iterations, workers, PORT_NUM
+  worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) if worker_iterations != 0
 end # Stop the Rails server after all user simulators have exited.
 
 print "===== Startup Benchmarks =====\n"
