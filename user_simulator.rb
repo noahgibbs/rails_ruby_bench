@@ -142,10 +142,12 @@ def time_actions(actions, user_offset, port_num)
   client.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "http://localhost:#{port_num}/" }
 
   times = []
-  t0 = Time.now
+  t_last = Time.now
   actions.each do |action|
     client.action_from_args *action
-    times.push (Time.now - t0)
+    current = Time.now
+    times.push (current - t_last)
+    t_last = current
   end
   times
 end
