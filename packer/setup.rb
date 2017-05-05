@@ -117,7 +117,7 @@ Dir.chdir(DISCOURSE_DIR) do
   end
 end
 
-# Minor bugfix for this version of Discourse. Can remove later?
+# Minor bugfix for this version of Discourse. Can remove when I only use 1.8.0+ Discourse?
 ASSETS_INIT = File.join(DISCOURSE_DIR, "config/initializers/assets.rb")
 unless File.exists?(ASSETS_INIT)
   File.open(ASSETS_INIT, "w") do |f|
@@ -126,6 +126,8 @@ unless File.exists?(ASSETS_INIT)
     INITIALIZER
   end
 end
+
+
 
 Dir.chdir("rails_ruby_bench") do
   csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
