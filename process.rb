@@ -20,13 +20,13 @@ Dir["*.json"].each do |f|
       end
       out_items
     end
+    runs = d["requests"]["times"].map { |thread_times| thread_times[-1] }
   elsif d["version"] == 2
     times = d["requests"]["times"].flatten(1)
+    runs = d["requests"]["times"].map { |thread_times| thread_times.inject(0.0, &:+) }
   else
     raise "Unrecognized data version #{d["version"].inspect} in JSON file #{f.inspect}!"
   end
-
-  runs = d["requests"]["times"].map { |thread_times| thread_times.inject(0.0, &:+) }
 
   req_time_by_ver[rv] ||= []
   req_time_by_ver[rv].concat times
