@@ -9,15 +9,23 @@ throughput_by_ver = {}
 Dir["*.json"].each do |f|
   d = JSON.load File.read(f)
   rv = d["environment"]["RUBY_VERSION"]
-  times = d["requests"]["times"].flat_map do |items|
-    out_items = []
-    cur_time = 0.0
-    items.each do |i|
-      out_items.push(i - cur_time)
-      cur_time = i
+
+  if d["version"].nil?
+    times = d["requests"]["times"].flat_map do |items|
+      out_items = []
+      cur_time = 0.0
+      items.each do |i|
+        out_items.push(i - cur_time)
+        cur_time = i
+      end
+      out_items
     end
-    out_items
+  elsif d["version"] == 2
+    times = d["requests"]["times"].flatten(1)
+  else
+    raise "Unrecognized data version #{d["version"].inspect} in JSON file #{f.inspect}!"
   end
+
   runs = d["requests"]["times"].map { |thread_times| thread_times[-1] }
 
   req_time_by_ver[rv] ||= []

@@ -178,6 +178,7 @@ print "Median thread run: #{worker_times_max.sort[ worker_times.size / 2 ] }\n"
 print "Raw times: #{worker_times.inspect}\n"
 
 test_data = {
+  "version" => 2,
   "settings" => {
     "startup_iters" => startup_iters,
     "random_seed" => random_seed,
