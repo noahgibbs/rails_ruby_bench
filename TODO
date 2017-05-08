@@ -11,3 +11,5 @@ Figure out how to handle Bundler.with_clean_env for start script invoking Discou
 Add environment vars to allow easily parallel building of multiple AMIs with the same EC2 creds
 
 Switch from t2.2xlarge to m4.2xlarge, update prices (about $0.43/hr instead of $0.38/hr), write post (and update old posts) with the change.
+
+Add to Master branch: bundle exec when running Puma. This branch's change is merged with a bunch of other stuff, don't use it.
