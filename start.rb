@@ -11,15 +11,15 @@ require 'gabbler'  # Require this before requiring Rails' config/environment.rb,
 ENV['RAILS_ENV'] = 'profile'
 require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
 
-startup_iters = 2
+startup_iters = 0
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
-worker_iterations = 1500  # All iterations, spread between load-test worker threads
+worker_iterations = 500  # All iterations, spread between load-test worker threads
 warmup_iterations = 0  # Need to test warmup iterations properly...
-workers = 30
+workers = 1
 port_num = 4567
-out_dir = "/tmp"
-puma_processes = 10
-puma_threads = 6
+out_dir = "."
+puma_processes = 1
+puma_threads = 1
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby start.rb [options]"
@@ -60,6 +60,9 @@ PUMA_THREADS = puma_threads
 PUMA_PROCESSES = puma_processes
 RANDOM_SEED = random_seed
 
+CONTROL_PORT = 9939
+CONTROL_TOKEN = "VeryModelOfAModernMajorGeneral"
+
 DISCOURSE_REVISION = `cd work/discourse && git rev-parse HEAD`.chomp
 
 def server_start
@@ -68,7 +71,7 @@ def server_start
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
     Dir.chdir "work/discourse"
     # Start Puma in a new process group to easily kill subprocesses if necessary
-    exec({ "RAILS_ENV" => "profile" }, "puma", "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "0:#{PUMA_THREADS}", :pgroup => true)
+    exec({ "RAILS_ENV" => "profile" }, "bundle", "exec", "puma", "--control", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "0:#{PUMA_THREADS}", :pgroup => true)
   end
 end
 
@@ -153,14 +156,32 @@ request_times = nil
 worker_times = []
 warmup_times = []
 
+puts "===== Getting Puma GC stats ====="
+puts `curl http://127.0.0.1:#{CONTROL_PORT}/gc?token=#{CONTROL_TOKEN}`
+puts "================================="
+
 with_running_server do
   print "Warmup iterations...\n"
   # First, warmup iterations.
-  warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) if warmup_iterations != 0
+  unless warmup_iterations == 0
+    warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) do
+      # Between requests...
+      system "pumactl", "gc", "--control", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN
+    end
+  end
   # Second, real iterations.
   print "Real iterations...\n"
-  worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) if worker_iterations != 0
+  unless worker_iterations == 0
+    worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) do
+      # Between requests
+      system "pumactl", "gc", "--control-token", CONTROL_TOKEN
+    end
+  end
 end # Stop the Rails server after all user simulators have exited.
+
+puts "===== Getting Puma GC stats ====="
+puts `curl http://127.0.0.1:#{CONTROL_PORT}/gc?token=#{CONTROL_TOKEN}`
+puts "================================="
 
 print "===== Startup Benchmarks =====\n"
 print "Longest run: #{startup_times.max}\n"
