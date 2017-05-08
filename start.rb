@@ -65,13 +65,25 @@ CONTROL_TOKEN = "VeryModelOfAModernMajorGeneral"
 
 DISCOURSE_REVISION = `cd work/discourse && git rev-parse HEAD`.chomp
 
+# Checked system - error if the command fails
+def csystem(cmd, err, opts = {})
+  out = `#{cmd}`
+  print "Running command: #{cmd.inspect}" if opts[:debug] || opts["debug"]
+  unless $?.success? || opts[:fail_ok] || opts["fail_ok"]
+    print "Error running command:\n#{cmd.inspect}\nOutput:\n#{out}\n=====\n"
+    raise SystemPackerBuildError.new(err)
+  end
+  print "Command output:\n#{out}\n=====\n" if opts[:debug] || opts["debug"]
+  out
+end
+
 def server_start
   # Start the server
   @started_pid = fork do
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
     Dir.chdir "work/discourse"
     # Start Puma in a new process group to easily kill subprocesses if necessary
-    exec({ "RAILS_ENV" => "profile" }, "bundle", "exec", "puma", "--control", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "0:#{PUMA_THREADS}", :pgroup => true)
+    exec({ "RAILS_ENV" => "profile" }, "bundle", "exec", "puma", "--control-url", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "1:#{PUMA_THREADS}", :pgroup => true)
   end
 end
 
@@ -157,7 +169,8 @@ worker_times = []
 warmup_times = []
 
 puts "===== Getting Puma GC stats ====="
-puts `curl http://127.0.0.1:#{CONTROL_PORT}/gc?token=#{CONTROL_TOKEN}`
+# Why not use pumactl? Because it doesn't return the output, and we want the JSON stats.
+puts csystem("curl http://127.0.0.1:#{CONTROL_PORT}/gc?token=#{CONTROL_TOKEN}", "Couldn't get gc stats from Puma before running requests!")
 puts "================================="
 
 with_running_server do
@@ -166,7 +179,8 @@ with_running_server do
   unless warmup_iterations == 0
     warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) do
       # Between requests...
-      system "pumactl", "gc", "--control", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN
+      csystem ["pumactl", "gc", "--control-url", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN],
+        "Couldn't trigger garbage collection using PumaCtl for status server!"
     end
   end
   # Second, real iterations.
@@ -174,13 +188,14 @@ with_running_server do
   unless worker_iterations == 0
     worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) do
       # Between requests
-      system "pumactl", "gc", "--control-token", CONTROL_TOKEN
+      csystem ["pumactl", "gc", "--control-token", CONTROL_TOKEN],
+        "Couldn't trigger garbage collection using PumaCtl for status server!"
     end
   end
 end # Stop the Rails server after all user simulators have exited.
 
 puts "===== Getting Puma GC stats ====="
-puts `curl http://127.0.0.1:#{CONTROL_PORT}/gc?token=#{CONTROL_TOKEN}`
+puts csystem("curl http://127.0.0.1:#{CONTROL_PORT}/gc?token=#{CONTROL_TOKEN}", "Couldn't get gc stats from Puma after running requests!")
 puts "================================="
 
 print "===== Startup Benchmarks =====\n"
