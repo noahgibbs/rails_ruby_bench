@@ -53,6 +53,7 @@
         "type": "shell",
         "environment_vars": [
             "RAILS_RUBY_BENCH_URL=https://github.com/noahgibbs/rails_ruby_bench.git",
+            "RAILS_RUBY_BENCH_TAG=gc_testing",
             "DISCOURSE_GIT_URL=https://github.com/noahgibbs/discourse.git",
             "DISCOURSE_TAG=modified_puma",
             "RUBY_GIT_URL=https://github.com/ruby/ruby.git",
