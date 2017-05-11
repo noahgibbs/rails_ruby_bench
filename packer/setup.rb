@@ -34,7 +34,7 @@ SETUP
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
   out = `#{cmd}`
-  print "Running command: #{cmd.inspect}" if opts[:debug] || opts["debug"]
+  print "Running command: #{cmd.inspect}\n" if opts[:debug] || opts["debug"]
   unless $?.success? || opts[:fail_ok] || opts["fail_ok"]
     print "Error running command:\n#{cmd.inspect}\nOutput:\n#{out}\n=====\n"
     raise SystemPackerBuildError.new(err)
