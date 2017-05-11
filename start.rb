@@ -170,7 +170,6 @@ warmup_times = []
 
 with_running_server do
   puts "===== Getting Puma GC stats ====="
-  # Why not use pumactl? Because it doesn't return the output, and we want the JSON stats.
   puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma before running requests!")
   puts "================================="
 
@@ -195,7 +194,7 @@ with_running_server do
 end # Stop the Rails server after all user simulators have exited.
 
 puts "===== Getting Puma GC stats ====="
-puts csystem("curl http://127.0.0.1:#{CONTROL_PORT}/gc?token=#{CONTROL_TOKEN}", "Couldn't get gc stats from Puma after running requests!")
+puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma after running requests!")
 puts "================================="
 
 print "===== Startup Benchmarks =====\n"
