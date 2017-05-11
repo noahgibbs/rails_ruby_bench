@@ -173,8 +173,8 @@ with_running_server do
   puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma before running requests!")
   puts "================================="
 
-  print "Warmup iterations...\n"
   # First, warmup iterations.
+  print "Warmup iterations: #{warmup_iterations}\n"
   unless warmup_iterations == 0
     warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) do
       # Between requests...
@@ -183,7 +183,7 @@ with_running_server do
     end
   end
   # Second, real iterations.
-  print "Real iterations...\n"
+  print "Benchmark iterations: #{worker_iterations}\n"
   unless worker_iterations == 0
     worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) do
       # Between requests
@@ -191,11 +191,11 @@ with_running_server do
         "Couldn't trigger garbage collection using PumaCtl for status server!"
     end
   end
-end # Stop the Rails server after all user simulators have exited.
+  puts "===== Getting Puma GC stats ====="
+  puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma after running requests!")
+  puts "================================="
+end # Stop the Rails server after all interactions have finished.
 
-puts "===== Getting Puma GC stats ====="
-puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma after running requests!")
-puts "================================="
 
 print "===== Startup Benchmarks =====\n"
 print "Longest run: #{startup_times.max}\n"
