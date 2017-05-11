@@ -182,12 +182,15 @@ with_running_server do
         "Couldn't trigger garbage collection using PumaCtl for status server!"
     end
   end
+  puts "===== Getting Puma GC stats ====="
+  puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma after warmups!")
+  puts "================================="
   # Second, real iterations.
   print "Benchmark iterations: #{worker_iterations}\n"
   unless worker_iterations == 0
     worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) do
       # Between requests
-      csystem ["pumactl", "gc", "--control-token", CONTROL_TOKEN],
+      csystem ["pumactl", "--control-url", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "gc"],
         "Couldn't trigger garbage collection using PumaCtl for status server!"
     end
   end
@@ -196,7 +199,7 @@ with_running_server do
   puts "================================="
 end # Stop the Rails server after all interactions have finished.
 
-
+# TODO: Fix these thread run times. process.rb was fixed, the just-to-console times weren't.
 print "===== Startup Benchmarks =====\n"
 print "Longest run: #{startup_times.max}\n"
 print "Shortest run: #{startup_times.min}\n"

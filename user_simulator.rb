@@ -124,7 +124,7 @@ def log(s)
   print "[#{Process.pid}]: #{s}\n"
 end
 
-def time_actions(actions, user_offset, port_num)
+def time_actions(actions, user_offset, port_num, &block)
   user = User.offset(user_offset).first
   unless user
     print "No user at offset #{user_offset.inspect}! Exiting.\n"
@@ -148,11 +148,14 @@ def time_actions(actions, user_offset, port_num)
     current = Time.now
     times.push (current - t_last)
     t_last = current
+
+    # This permits things like gc-between-requests without timing it.
+    block.call unless block.nil?
   end
   times
 end
 
-def multithreaded_actions(iterations, worker_threads, port_num)
+def multithreaded_actions(iterations, worker_threads, port_num, &block)
   output_mutex = Mutex.new
   output_times = []
 
@@ -169,7 +172,7 @@ def multithreaded_actions(iterations, worker_threads, port_num)
         # in a few "empty" threads at high offsets. In that case, you have "too many" threads - just
         # have the ones with no work assigned do nothing.
         unless my_actions == nil || my_actions.size == 0
-          thread_times = time_actions(my_actions, offset, port_num)
+          thread_times = time_actions(my_actions, offset, port_num, &block)
           output_mutex.synchronize do
             output_times << thread_times
           end
