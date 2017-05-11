@@ -190,7 +190,7 @@ with_running_server do
   unless worker_iterations == 0
     worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) do
       # Between requests
-      csystem ["pumactl", "--control-url", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "gc"],
+      csystem ["bundle", "exec", "pumactl", "--control-url", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "gc"],
         "Couldn't trigger garbage collection using PumaCtl for status server!"
     end
   end
