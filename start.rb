@@ -14,10 +14,10 @@ require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/confi
 startup_iters = 2
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
 worker_iterations = 1500  # All iterations, spread between load-test worker threads
-warmup_iterations = 0  # Need to test warmup iterations properly...
+warmup_iterations = 300  # Need to test warmup iterations properly...
 workers = 30
 port_num = 4567
-out_dir = "/tmp"
+out_dir = "."
 puma_processes = 10
 puma_threads = 6
 
@@ -60,7 +60,22 @@ PUMA_THREADS = puma_threads
 PUMA_PROCESSES = puma_processes
 RANDOM_SEED = random_seed
 
+CONTROL_PORT = 9939
+CONTROL_TOKEN = "VeryModelOfAModernMajorGeneral"
+
 DISCOURSE_REVISION = `cd work/discourse && git rev-parse HEAD`.chomp
+
+# Checked system - error if the command fails
+def csystem(cmd, err, opts = {})
+  out = `#{cmd}`
+  print "Running command: #{cmd.inspect}\n" if opts[:debug] || opts["debug"]
+  unless $?.success? || opts[:fail_ok] || opts["fail_ok"]
+    print "Error running command:\n#{cmd.inspect}\nOutput:\n#{out}\n=====\n"
+    raise err
+  end
+  print "Command output:\n#{out}\n=====\n" if opts[:debug] || opts["debug"]
+  out
+end
 
 def server_start
   # Start the server
@@ -68,7 +83,7 @@ def server_start
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
     Dir.chdir "work/discourse"
     # Start Puma in a new process group to easily kill subprocesses if necessary
-    exec({ "RAILS_ENV" => "profile" }, "puma", "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "0:#{PUMA_THREADS}", :pgroup => true)
+    exec({ "RAILS_ENV" => "profile" }, "bundle", "exec", "puma", "--control", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "1:#{PUMA_THREADS}", :pgroup => true)
   end
 end
 
@@ -154,14 +169,19 @@ worker_times = []
 warmup_times = []
 
 with_running_server do
-  print "Warmup iterations...\n"
   # First, warmup iterations.
-  warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM) if warmup_iterations != 0
+  print "Warmup iterations: #{warmup_iterations}\n"
+  unless warmup_iterations == 0
+    warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM)
+  end
   # Second, real iterations.
-  print "Real iterations...\n"
-  worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) if worker_iterations != 0
-end # Stop the Rails server after all user simulators have exited.
+  print "Benchmark iterations: #{worker_iterations}\n"
+  unless worker_iterations == 0
+    worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM)
+  end
+end # Stop the Rails server after all interactions have finished.
 
+# TODO: Fix these thread run times. process.rb was fixed, the just-to-console times weren't.
 print "===== Startup Benchmarks =====\n"
 print "Longest run: #{startup_times.max}\n"
 print "Shortest run: #{startup_times.min}\n"

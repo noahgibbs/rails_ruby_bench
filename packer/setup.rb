@@ -6,6 +6,7 @@ CUR_DIRECTORY = Dir.pwd
 
 RUBY_INSTALL_DIR     = "/usr/local/benchmark/ruby" # Make configurable?
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
+RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
 DISCOURSE_GIT_URL    = ENV["DISCOURSE_GIT_URL"]
 DISCOURSE_TAG        = ENV["DISCOURSE_TAG"]
 RUBY_GIT_URL         = ENV["RUBY_GIT_URL"]
@@ -21,6 +22,7 @@ print <<SETUP
 =========
 Running setup.rb for Ruby-related software.
 RAILS_RUBY_BENCH_URL: #{RAILS_RUBY_BENCH_URL.inspect}
+RAILS_RUBY_BENCH_TAG: #{RAILS_RUBY_BENCH_TAG.inspect}
 DISCOURSE_GIT_URL: #{DISCOURSE_GIT_URL.inspect}
 DISCOURSE_TAG: #{DISCOURSE_TAG.inspect}
 RUBY_GIT_URL: #{RUBY_GIT_URL.inspect}
@@ -32,7 +34,7 @@ SETUP
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
   out = `#{cmd}`
-  print "Running command: #{cmd.inspect}" if opts[:debug] || opts["debug"]
+  print "Running command: #{cmd.inspect}\n" if opts[:debug] || opts["debug"]
   unless $?.success? || opts[:fail_ok] || opts["fail_ok"]
     print "Error running command:\n#{cmd.inspect}\nOutput:\n#{out}\n=====\n"
     raise SystemPackerBuildError.new(err)
@@ -62,6 +64,15 @@ end
 RAILS_BENCH_DIR = File.join(CUR_DIRECTORY, "rails_ruby_bench")
 DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 RUBY_DIR = File.join(RAILS_BENCH_DIR, "work", "ruby")
+
+if RAILS_RUBY_BENCH_URL.strip != ""
+  Dir.chdir(RAILS_BENCH_DIR) do
+    csystem "git remote add benchmark-url #{RAILS_RUBY_BENCH_URL} && git fetch benchmark-url", "error fetching commits from Rails Ruby Bench at #{RAILS_RUBY_BENCH_URL.inspect}"
+    if RAILS_RUBY_BENCH_TAG.strip != ""
+      csystem "git checkout benchmark-url/#{RAILS_RUBY_BENCH_TAG}", "Error checking out Rails Ruby Bench tag #{RAILS_RUBY_BENCH_TAG.inspect}"
+    end
+  end
+end
 
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
 clone_or_update_repo RUBY_GIT_URL, RUBY_TAG, RUBY_DIR

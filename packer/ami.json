@@ -53,6 +53,7 @@
         "type": "shell",
         "environment_vars": [
             "RAILS_RUBY_BENCH_URL=https://github.com/noahgibbs/rails_ruby_bench.git",
+            "RAILS_RUBY_BENCH_TAG=",
             "DISCOURSE_GIT_URL=https://github.com/discourse/discourse.git",
             "DISCOURSE_TAG=v1.5.0",
             "RUBY_GIT_URL=https://github.com/ruby/ruby.git",
