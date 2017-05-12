@@ -29,7 +29,7 @@ first.
 
 ## Definitive Benchmark Numbers and AWS
 
-The definitive version of the benchmark uses an AWS t2.2xlarge
+The definitive version of the benchmark uses an AWS m4.2xlarge
 instance and an AMI. This has 8 vCPUs (4 virtual cores) as discussed
 in the design documentation, and doesn't have an excessive amount of
 memory or I/O priority. It's a realistic hosting choice at roughly
@@ -41,10 +41,9 @@ To create your own AMI, see packer/README.md in this Git repo.
 With your AMI (or using a public AMI), you can launch an instance as
 normal for AWS. Here's an example command line:
 
-    aws ec2 run-instances --image-id ami-745b8262 --count 1 --instance-type t2.2xlarge --key-name MyKeyPair
+    aws ec2 run-instances --image-id ami-745b8262 --count 1 --instance-type m4.2xlarge --key-name MyKeyPair --placement Tenancy=dedicated
 
-Note that ami-745b8262 may or may not be the latest pre-built public
-AMI when you read this, and it assumes you're running in us-east-1.
+Replace ami-745b8262 with the current latest public AMI, or one you built.
 
 ## Debugging and AWS
 
