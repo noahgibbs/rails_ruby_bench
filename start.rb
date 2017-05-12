@@ -169,7 +169,7 @@ worker_times = []
 warmup_times = []
 
 with_running_server do
-  puts "===== Getting Puma GC stats ====="
+  puts "===== Getting Puma GC stats [1] ====="
   puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma before running requests!")
   puts "================================="
 
@@ -182,19 +182,20 @@ with_running_server do
         "Couldn't trigger garbage collection using PumaCtl for status server!"
     end
   end
-  puts "===== Getting Puma GC stats ====="
+  puts "===== Getting Puma GC stats [2] ====="
   puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma after warmups!")
   puts "================================="
   # Second, real iterations.
   print "Benchmark iterations: #{worker_iterations}\n"
   unless worker_iterations == 0
     worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM) do
-      # Between requests
-      csystem ["bundle", "exec", "pumactl", "--control-url", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "gc"],
-        "Couldn't trigger garbage collection using PumaCtl for status server!"
+      # Between requests - this is failing for some reason, but we're getting very few total GCs with the current setup... Effectively zero.
+      # (Note: using pumactl to trigger a GC increases Ruby's GC total, as you'd expect.)
+      #csystem ["bundle", "exec", "pumactl", "--control-url", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "gc"],
+      #  "Couldn't trigger garbage collection using PumaCtl for status server!"
     end
   end
-  puts "===== Getting Puma GC stats ====="
+  puts "===== Getting Puma GC stats [3] ====="
   puts csystem("bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc", "Couldn't get gc stats from Puma after running requests!")
   puts "================================="
 end # Stop the Rails server after all interactions have finished.
