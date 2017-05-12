@@ -69,7 +69,7 @@ req_time_by_ver.keys.sort.each do |version|
 
   print "--\n  Throughput in reqs/sec for each full run:\n"
   print "  Mean: #{throughputs.inject(0.0, &:+) / throughputs.size} Median: #{percentile(throughputs, 50)}\n"
-  print "  #{throughputs.inspect}"
+  print "  #{throughputs.inspect}\n"
 end
 
 print "******************\n"
