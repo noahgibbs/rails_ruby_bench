@@ -138,7 +138,19 @@ unless File.exists?(ASSETS_INIT)
   end
 end
 
-
+# Turn off CSRF protection for Discourse in the benchmark. I have no idea why
+# user_simulator's CSRF handling stopped working between Discourse 1.7.X and
+# 1.8.0.beta10, but it clearly did. This is a horrible workaround and should
+# be fixed when I figure out the problem.
+APP_CONTROLLER = File.join(DISCOURSE_DIR, "app/controllers/application_controller.rb")
+contents = File.read(APP_CONTROLLER)
+original_line = "protect_from_forgery"
+patched_line = "#protect_from_forgery"
+unless contents[patched_line]
+  File.open(APP_CONTROLLER, "w") do |f|
+    f.print contents.gsub(original_line, patched_line)
+  end
+end
 
 Dir.chdir("rails_ruby_bench") do
   csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
