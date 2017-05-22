@@ -4,7 +4,7 @@ require "json"
 require "optparse"
 
 cohorts_by = "RUBY_VERSION,warmup_iterations"
-input_glob = "*.json"
+input_glob = "rails_ruby_bench_*.json"
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby process.rb [options]"
