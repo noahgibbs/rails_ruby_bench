@@ -2,3 +2,4 @@ work/discourse
 work/ruby
 packer/ec2_amazon-ebs.pem
 
+process_output.json
