@@ -1,6 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    chartkick (2.2.4)
     domain_name (0.5.25)
       unf (>= 0.0.5, < 1.0.0)
     gabbler (0.1.0)
@@ -20,8 +21,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  chartkick
   gabbler
   rest-client
 
 BUNDLED WITH
-   1.14.2
+   1.14.6
