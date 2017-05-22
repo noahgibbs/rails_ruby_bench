@@ -12,7 +12,7 @@ OptionParser.new do |opts|
     cohorts_by = c  #.to_i
   end
   opts.on("-i", "--input-glob GLOB", "File pattern to match on (default *.json)") do |s|
-    input_glob = s.to_s
+    input_glob = s
   end
 end.parse!
 
