@@ -144,9 +144,36 @@ label.disabled {
 
 <script>
 
-graph_data = []
-graph_data.push({ name: "One Bar", data: [{x: 0, y: 3.1}, {x:1,
-y:3.7}, {x:3, y:4.7}, {x:7, y:0.1}], color: "steelblue" })
+var graph_data = [];
+var series = [];
+var series_name = "";
+var palette = new Rickshaw.Color.Palette();
+
+<%
+   data["processed"]["cohort"].keys.sort.reverse.each do |cohort_name|
+   cohort_data = data["processed"]["cohort"][cohort_name]
+   ruby_version, warmup_iters = cohort_name.split(",")
+
+   data_points = cohort_data["data_points"]
+   full_runs = cohort_data["full_runs"]
+   request_percentiles = cohort_data["request_percentiles"] # Map of num-to-value
+   run_percentiles = cohort_data["run_percentiles"] # Map of num-to-value
+   throughput_mean = cohort_data["throughput_mean"]
+   throughput_median = cohort_data["throughput_median"]
+   throughputs = cohort_data["throughputs"]
+   %>
+
+series_name = "Ruby " + <%= ruby_version.inspect %> + ", " + <%= warmup_iters.inspect %> + " warmups";
+<% rb_series = []
+   throughputs.each_with_index do |t, i|
+     rb_series.push x: i, y: t
+   end
+   %>
+series = <%= JSON.pretty_generate(rb_series) %>;
+
+graph_data.push({ name: series_name, data: series, color: palette.color() });
+
+<% end %>
 
 //Rickshaw.Series.zeroFill(graph_data);
 
