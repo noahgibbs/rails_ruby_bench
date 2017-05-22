@@ -9,3 +9,5 @@ Figure out what the "final composite" score should look like. Right now, just lo
 Figure out how to handle Bundler.with_clean_env for start script invoking Discourse. Right now it's a mess, and you can't "bundle exec ./start.rb", which isn't great.
 
 Add environment vars to allow easily parallel building of multiple AMIs with the same EC2 creds
+
+Shut down Puma w/ pumactl or similar, not by killing the process - more reliable, cleaner.
