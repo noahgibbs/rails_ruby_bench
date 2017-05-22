@@ -15,54 +15,26 @@
 <div id="chart"></div>
 <div id="legend"></div>
 
-<%
-   require "json"
-   @data = JSON.load(File.read "process_output.json")
-   %>
-
 <script>
 
-var palette = new Rickshaw.Color.Palette( { scheme: 'httpStatus' } );
+graph_data = []
+graph_data.push({ name: "One Bar", data: [{x: 0, y: 3.1}, {x:1,
+y:3.7}, {x:3, y:4.7}, {x:7, y:0.1}], color: "steelblue" })
 
-var wrapper = new Rickshaw.Graph.Ajax( {
+//Rickshaw.Series.zeroFill(graph_data);
+
+var wrapper = new Rickshaw.Graph( {
 	element: document.getElementById("chart"),
-	dataURL: 'http://code.shutterstock.com/rickshaw/examples/data/status.json',
-	width: 960,
-	height: 500,
+	width: 640,
+	height: 480,
 	renderer: 'bar',
-	onData: function(d) { return transformData(d) },
-	onComplete: function(w) {
-		var legend = new Rickshaw.Graph.Legend( { 
-			element: document.querySelector('#legend'), 
-			graph: w.graph
-		} );
-        },
-        onError: function(w) {
-          alert("Couldn't get AJAX graph data!");
-        }
+        series: graph_data
 } );
 
-function transformData(d) {
-	var data = [];
-	var statusCounts = {};
+var legend = new Rickshaw.Graph.Legend( {
+        element: document.querySelector('#legend'), 
+        graph: wrapper
+});
 
-	Rickshaw.keys(d).sort().forEach( function(t) {
-		Rickshaw.keys(d[t]).forEach( function(status) {
-			statusCounts[status] = statusCounts[status] || [];
-			statusCounts[status].push( { x: parseFloat(t), y: d[t][status] } );
-		} );
-	} );
-
-	Rickshaw.keys(statusCounts).sort().forEach( function(status) {
-		data.push( {
-			name: status,
-			data: statusCounts[status],
-			color: palette.color(status)
-		} );
-	} );
-
-	Rickshaw.Series.zeroFill(data);
-	return data;
-}
-
+wrapper.render();
 </script>

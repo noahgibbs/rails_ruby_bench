@@ -9,13 +9,11 @@ RICKSHAW_TEMPLATE = File.read RICKSHAW_TEMPLATE_PATH
 OUTPUT_FILE = "rickshaw_graph.html"
 
 raise "Wrong number of arguments!" if ARGV.size != 1
+input_data = JSON.load File.read(ARGV[0])
 
-input_path = ARGV[0]
+er = Erubis::Eruby.new(RICKSHAW_TEMPLATE)
 
-template = File.read(input_path)
-er = Erubis::Eruby.new(template)
-
-output = er.result  # TODO: add binding
+output = er.result :data => input_data
 
 File.open(OUTPUT_FILE, "w") do |f|
   f.print output
