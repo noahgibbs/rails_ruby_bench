@@ -1,0 +1,68 @@
+<!-- Embeddable, not full-page -->
+
+<link type="text/css" rel="stylesheet" href="http://code.shutterstock.com/rickshaw/src/css/graph.css">
+<link type="text/css" rel="stylesheet" href="http://code.shutterstock.com/rickshaw/src/css/legend.css">
+<!-- <link type="text/css" rel="stylesheet" href="css/extensions.css"> -->
+
+<!-- Note: Rickshaw uses D3.js version 3, not 4 -->
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="http://code.shutterstock.com/rickshaw/rickshaw.min.js"></script>
+
+<!-- Also older versions for this example. TODO: see if we can remove or update these... -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.15/jquery-ui.min.js"></script>
+
+<div id="chart"></div>
+<div id="legend"></div>
+
+<%
+   require "json"
+   @data = JSON.load(File.read "process_output.json")
+   %>
+
+<script>
+
+var palette = new Rickshaw.Color.Palette( { scheme: 'httpStatus' } );
+
+var wrapper = new Rickshaw.Graph.Ajax( {
+	element: document.getElementById("chart"),
+	dataURL: 'http://code.shutterstock.com/rickshaw/examples/data/status.json',
+	width: 960,
+	height: 500,
+	renderer: 'bar',
+	onData: function(d) { return transformData(d) },
+	onComplete: function(w) {
+		var legend = new Rickshaw.Graph.Legend( { 
+			element: document.querySelector('#legend'), 
+			graph: w.graph
+		} );
+        },
+        onError: function(w) {
+          alert("Couldn't get AJAX graph data!");
+        }
+} );
+
+function transformData(d) {
+	var data = [];
+	var statusCounts = {};
+
+	Rickshaw.keys(d).sort().forEach( function(t) {
+		Rickshaw.keys(d[t]).forEach( function(status) {
+			statusCounts[status] = statusCounts[status] || [];
+			statusCounts[status].push( { x: parseFloat(t), y: d[t][status] } );
+		} );
+	} );
+
+	Rickshaw.keys(statusCounts).sort().forEach( function(status) {
+		data.push( {
+			name: status,
+			data: statusCounts[status],
+			color: palette.color(status)
+		} );
+	} );
+
+	Rickshaw.Series.zeroFill(data);
+	return data;
+}
+
+</script>
