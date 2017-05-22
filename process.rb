@@ -1,15 +1,55 @@
 #!/usr/bin/env ruby
 
 require "json"
+require "optparse"
 
-req_time_by_ver = {}
-run_by_ver = {}
-throughput_by_ver = {}
+cohorts_by = "RUBY_VERSION,warmup_iterations"
+input_glob = "*.json"
 
-Dir["*.json"].each do |f|
+OptionParser.new do |opts|
+  opts.banner = "Usage: ruby process.rb [options]"
+  opts.on("-c", "--cohorts-by COHORTS", "Variables to partition data by, incl. RUBY_VERSION,warmup_iterations,etc.") do |c|
+    cohorts_by = c  #.to_i
+  end
+  opts.on("-i", "--input-glob GLOB", "File pattern to match on (default *.json)") do |s|
+    input_glob = s.to_s
+  end
+end.parse!
+
+OUTPUT_FILE = "process_output.json"
+
+cohort_indices = cohorts_by.strip.split(",")
+
+req_time_by_cohort = {}
+run_by_cohort = {}
+throughput_by_cohort = {}
+
+INPUT_FILES = Dir[input_glob]
+
+process_output = {
+  cohort_indices: cohort_indices,
+  input_files: INPUT_FILES,
+  req_time_by_cohort: req_time_by_cohort,
+  run_by_cohort: run_by_cohort,
+  throughput_by_cohort: throughput_by_cohort,
+  processed: {
+    :cohort => {},
+  },
+}
+
+INPUT_FILES.each do |f|
   d = JSON.load File.read(f)
-  rv = d["environment"]["RUBY_VERSION"]
 
+  # Assign a cohort to these samples
+  cohort_parts = cohort_indices.map do |cohort_elt|
+    raise "Unexpected file format for file #{f.inspect}!" unless d["settings"] && d["environment"]
+    item = d["settings"][cohort_elt] || d["environment"][cohort_elt]
+    item
+  end
+  raise "Can't find setting or environment object #{cohort_elt}!" if cohort_parts.any?(&:nil?)
+  cohort = cohort_parts.join(",")
+
+  # Update data format to latest version
   if d["version"].nil?
     times = d["requests"]["times"].flat_map do |items|
       out_items = []
@@ -28,14 +68,14 @@ Dir["*.json"].each do |f|
     raise "Unrecognized data version #{d["version"].inspect} in JSON file #{f.inspect}!"
   end
 
-  req_time_by_ver[rv] ||= []
-  req_time_by_ver[rv].concat times
+  req_time_by_cohort[cohort] ||= []
+  req_time_by_cohort[cohort].concat times
 
-  run_by_ver[rv] ||= []
-  run_by_ver[rv].push runs
+  run_by_cohort[cohort] ||= []
+  run_by_cohort[cohort].push runs
 
-  throughput_by_ver[rv] ||= []
-  throughput_by_ver[rv].push d["requests"]["times"].flatten.size / runs.max
+  throughput_by_cohort[cohort] ||= []
+  throughput_by_cohort[cohort].push d["requests"]["times"].flatten.size / runs.max
 end
 
 def percentile(list, pct)
@@ -49,27 +89,43 @@ def percentile(list, pct)
   list[prev_item] + (list[prev_item + 1] - list[prev_item]) * linear_combination
 end
 
-req_time_by_ver.keys.sort.each do |version|
-  data = req_time_by_ver[version]
-  data.sort!
-  runs = run_by_ver[version]
+req_time_by_cohort.keys.sort.each do |cohort|
+  data = req_time_by_cohort[cohort]
+  data.sort! # Sort request times lowest-to-highest for use with percentile()
+  runs = run_by_cohort[cohort]
   flat_runs = runs.flatten.sort
   run_longest = runs.map { |worker_times| worker_times.max }
-  throughputs = throughput_by_ver[version].sort
+  throughputs = throughput_by_cohort[cohort].sort
 
-  print "=====\nRuby Version: #{version}, data points: #{data.size}, full runs: #{runs.size}\n"
+  cohort_printable = cohort_indices.zip(cohort.split(",")).map { |a, b| "#{a}: #{b}" }.join(", ")
+  print "=====\nCohort: #{cohort_printable}, # of data points: #{data.size}, full runs: #{runs.size}\n"
+  process_output[:processed][:cohort][cohort] = {
+    data_points: data.size,
+    full_runs: runs.size,
+    request_percentiles: {},
+    run_percentiles: {},
+    throughputs: throughputs,
+  }
   [0, 1, 5, 10, 50, 90, 95, 99, 100].each do |p|
+    process_output[:processed][:cohort][cohort][:request_percentiles][p.to_s] = percentile(data, p)
     print "  #{"%2d" % p}%ile: #{percentile(data, p)}\n"
   end
 
   print "--\n  Overall thread completion times:\n"
   [0, 10, 50, 90, 100].each do |p|
+    process_output[:processed][:cohort][cohort][:run_percentiles][p.to_s] = percentile(flat_runs, p)
     print "  #{"%2d" % p}%ile: #{percentile(flat_runs, p)}\n"
   end
 
   print "--\n  Throughput in reqs/sec for each full run:\n"
   print "  Mean: #{throughputs.inject(0.0, &:+) / throughputs.size} Median: #{percentile(throughputs, 50)}\n"
+  process_output[:processed][:cohort][cohort][:throughput_mean] = throughputs.inject(0.0, &:+) / throughputs.size
+  process_output[:processed][:cohort][cohort][:throughput_median] = percentile(throughputs, 50)
   print "  #{throughputs.inspect}\n"
 end
 
 print "******************\n"
+
+File.open(OUTPUT_FILE, "w") do |f|
+  f.print JSON.pretty_generate(process_output)
+end
