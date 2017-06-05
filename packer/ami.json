@@ -55,11 +55,11 @@
             "RAILS_RUBY_BENCH_URL=https://github.com/noahgibbs/rails_ruby_bench.git",
             "RAILS_RUBY_BENCH_TAG=",
             "DISCOURSE_GIT_URL=https://github.com/discourse/discourse.git",
-            "DISCOURSE_TAG=",
-            "RUBY_GIT_URL=https://github.com/ruby/ruby.git",
-            "RUBY_TAG=",
+            "DISCOURSE_TAG=v1.8.0.beta13",
+            "RUBY_GIT_URL=https://github.com/noahgibbs/ruby.git",
+            "RUBY_TAG=closed_addr_hash_tables",
             "RUBY_SYSTEM_PATH=",
-            "OTHER_RUBIES=2.3"
+            "OTHER_RUBIES="
         ],
         "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} ruby {{ .Path }}",
         "script": "setup.rb"
