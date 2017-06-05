@@ -12,4 +12,4 @@ Add environment vars to allow easily simultaneous building of multiple AMIs with
 
 Shut down Puma w/ pumactl or similar, not by killing the process - more reliable, cleaner.
 
-Add support for multiple Ruby versions/tags/SHAs to packer/setup.rb to "race" multiple Rubies.
+Add support for multiple Ruby versions/tags/SHAs to packer/setup.rb to "race" multiple Rubies. Need to install gems, etc in the Rubies as well.
