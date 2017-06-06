@@ -23,6 +23,7 @@ cohort_indices = cohorts_by.strip.split(",")
 req_time_by_cohort = {}
 run_by_cohort = {}
 throughput_by_cohort = {}
+startup_by_cohort = {}
 
 INPUT_FILES = Dir[input_glob]
 
@@ -61,12 +62,16 @@ INPUT_FILES.each do |f|
       out_items
     end
     runs = d["requests"]["times"].map { |thread_times| thread_times[-1] }
+    raise "Error with request times! #{d["requests"]["times"].inspect}" if runs.nil? || runs.any?(:nil?)
   elsif d["version"] == 2
     times = d["requests"]["times"].flatten(1)
     runs = d["requests"]["times"].map { |thread_times| thread_times.inject(0.0, &:+) }
   else
     raise "Unrecognized data version #{d["version"].inspect} in JSON file #{f.inspect}!"
   end
+
+  startup_by_cohort[cohort] ||= []
+  startup_by_cohort[cohort].concat d["startup"]["times"]
 
   req_time_by_cohort[cohort] ||= []
   req_time_by_cohort[cohort].concat times
@@ -75,7 +80,7 @@ INPUT_FILES.each do |f|
   run_by_cohort[cohort].push runs
 
   throughput_by_cohort[cohort] ||= []
-  throughput_by_cohort[cohort].push d["requests"]["times"].flatten.size / runs.max
+  throughput_by_cohort[cohort].push (d["requests"]["times"].flatten.size / runs.max) unless runs.empty?
 end
 
 def percentile(list, pct)
@@ -89,6 +94,11 @@ def percentile(list, pct)
   list[prev_item] + (list[prev_item + 1] - list[prev_item]) * linear_combination
 end
 
+def array_mean(arr)
+  return nil if arr.empty?
+  arr.inject(0.0, &:+) / arr.size
+end
+
 req_time_by_cohort.keys.sort.each do |cohort|
   data = req_time_by_cohort[cohort]
   data.sort! # Sort request times lowest-to-highest for use with percentile()
@@ -96,6 +106,7 @@ req_time_by_cohort.keys.sort.each do |cohort|
   flat_runs = runs.flatten.sort
   run_longest = runs.map { |worker_times| worker_times.max }
   throughputs = throughput_by_cohort[cohort].sort
+  startup_times = startup_by_cohort[cohort].sort
 
   cohort_printable = cohort_indices.zip(cohort.split(",")).map { |a, b| "#{a}: #{b}" }.join(", ")
   print "=====\nCohort: #{cohort_printable}, # of data points: #{data.size}, full runs: #{runs.size}\n"
@@ -118,10 +129,13 @@ req_time_by_cohort.keys.sort.each do |cohort|
   end
 
   print "--\n  Throughput in reqs/sec for each full run:\n"
-  print "  Mean: #{throughputs.inject(0.0, &:+) / throughputs.size} Median: #{percentile(throughputs, 50)}\n"
-  process_output[:processed][:cohort][cohort][:throughput_mean] = throughputs.inject(0.0, &:+) / throughputs.size
+  print "  Mean: #{array_mean(throughputs)} Median: #{percentile(throughputs, 50)}\n"
+  process_output[:processed][:cohort][cohort][:throughput_mean] = array_mean(throughputs)
   process_output[:processed][:cohort][cohort][:throughput_median] = percentile(throughputs, 50)
-  print "  #{throughputs.inspect}\n"
+  print "  #{throughputs.inspect}\n\n"
+
+  print "--\n  Startup times for this cohort:\n"
+  print "  Mean: #{array_mean(startup_times).inspect} Median: #{percentile(startup_times, 50).inspect}\n"
 end
 
 print "******************\n"
