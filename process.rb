@@ -33,6 +33,7 @@ process_output = {
   req_time_by_cohort: req_time_by_cohort,
   run_by_cohort: run_by_cohort,
   throughput_by_cohort: throughput_by_cohort,
+  startup_by_cohort: startup_by_cohort,
   processed: {
     :cohort => {},
   },
@@ -134,6 +135,8 @@ req_time_by_cohort.keys.sort.each do |cohort|
   process_output[:processed][:cohort][cohort][:throughput_median] = percentile(throughputs, 50)
   print "  #{throughputs.inspect}\n\n"
 
+  process_output[:processed][:cohort][cohort][:startup_mean] = array_mean(startup_times)
+  process_output[:processed][:cohort][cohort][:startup_median] = percentile(startup_times, 50)
   print "--\n  Startup times for this cohort:\n"
   print "  Mean: #{array_mean(startup_times).inspect} Median: #{percentile(startup_times, 50).inspect}\n"
 end
