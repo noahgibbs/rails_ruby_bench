@@ -1,0 +1,38 @@
+{
+  "rails_ruby_bench": {
+      "git_url": "https://github.com/noahgibbs/rails_ruby_bench.git",
+      "git_tag": ""
+  },
+  "discourse": {
+      "git_url": "https://github.com/discourse/discourse.git",
+      "git_tag": "v1.8.0.beta13"
+  },
+  "compare_rubies": [
+      {
+          "name": "fromsource-2.0.0-p648",
+          "prefix_dir": "/home/ubuntu/work/mri-2.0.0-p648",
+          "git_url": "git://github.com/ruby/ruby.git",
+          "git_tag": "v2_0_0_648"
+      },
+      {
+          "name": "mri-2.1.10",
+          "git_url": "git://github.com/ruby/ruby.git",
+          "git_tag": "v2_1_10"
+      },
+      {
+          "name": "mri-2.2.7",
+          "git_url": "git://github.com/ruby/ruby.git",
+          "git_tag": "v2_2_7"
+      },
+      {
+          "name": "mri-2.3.4",
+          "git_url": "git://github.com/ruby/ruby.git",
+          "git_tag": "v2_3_4"
+      },
+      {
+          "name": "mri-2.4.1",
+          "git_url": "git://github.com/ruby/ruby.git",
+          "git_tag": "v2_4_1"
+      }
+  ]
+}

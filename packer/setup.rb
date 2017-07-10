@@ -1,20 +1,16 @@
 #!/usr/bin/env ruby
 
 require "fileutils"
+require "json"
 
 CUR_DIRECTORY = Dir.pwd
 
-RUBY_INSTALL_DIR     = "/usr/local/benchmark/ruby" # Make configurable?
+benchmark_software = JSON.load(File.read("/home/ubuntu/benchmark_software.json"))
+
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
 RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
-DISCOURSE_GIT_URL    = ENV["DISCOURSE_GIT_URL"]
-DISCOURSE_TAG        = ENV["DISCOURSE_TAG"]
-RUBY_GIT_URL         = ENV["RUBY_GIT_URL"]
-RUBY_TAG             = ENV["RUBY_TAG"]
-OTHER_RUBIES         = ENV["OTHER_RUBIES"]
-
-# TODO:
-# * Review Postgres setup - complete?
+DISCOURSE_GIT_URL    = benchmark_software["discourse"]["git_url"]
+DISCOURSE_TAG        = benchmark_software["discourse"]["git_tag"]
 
 class SystemPackerBuildError < RuntimeError; end
 
@@ -23,11 +19,9 @@ print <<SETUP
 Running setup.rb for Ruby-related software.
 RAILS_RUBY_BENCH_URL: #{RAILS_RUBY_BENCH_URL.inspect}
 RAILS_RUBY_BENCH_TAG: #{RAILS_RUBY_BENCH_TAG.inspect}
-DISCOURSE_GIT_URL: #{DISCOURSE_GIT_URL.inspect}
-DISCOURSE_TAG: #{DISCOURSE_TAG.inspect}
-RUBY_GIT_URL: #{RUBY_GIT_URL.inspect}
-RUBY_TAG: #{RUBY_TAG.inspect}
-OTHER_RUBIES: #{OTHER_RUBIES.inspect}
+
+Benchmark Software:
+#{JSON.pretty_generate(benchmark_software)}
 =========
 SETUP
 
@@ -61,10 +55,48 @@ def clone_or_update_repo(repo_url, tag, work_dir)
 
 end
 
+def clone_or_update_by_json(h, work_dir)
+  clone_or_update_repo(h["git_url"], h["git_tag"], h["checkout_dir"] || work_dir)
+end
+
+def build_and_mount_ruby(source_dir, prefix_dir, mount_name)
+  puts "Build and mount Ruby: Source dir: #{source_dir.inspect} Prefix dir: #{prefix_dir.inspect} Mount name: #{mount_name.inspect}"
+  Dir.chdir(source_dir) do
+    unless File.exists?("configure")
+      csystem "autoconf", "Couldn't run autoconf in #{source_dir}!"
+    end
+    unless File.exists?("Makefile")
+      csystem "./configure --prefix #{prefix_dir}", "Couldn't run configure in #{source_dir}!"
+    end
+    csystem "make", "Make failed in #{source_dir}!"
+    # This should install to the benchmark ruby dir
+    csystem "make install", "Installing Ruby failed in #{source_dir}!"
+  end
+  csystem "bash -l -c \"rvm mount #{prefix_dir} -n #{mount_name}\"", "Couldn't mount #{source_dir.inspect} as #{mount_name}!"
+  csystem "bash -l -c \"rvm use --default ext-#{mount_name}\"", "Couldn't set ext-#{mount_name} to rvm default!"
+end
+
+def autogen_name
+  @autogen_number ||= 1
+  name = "autogen-name-#{@autogen_number}"
+  @autogen_number += 1
+  name
+end
+
+def clone_or_update_ruby_by_json(h, work_dir)
+  clone_or_update_by_json(h, work_dir)
+  mount_name = h["name"] || autogen_name
+  prefix_dir = h["prefix_dir"] || File.join(RAILS_BENCH_DIR, "work", "prefix", mount_name.gsub("/", "_"))
+
+  build_and_mount_ruby(h["checkout_dir"], prefix_dir, mount_name)
+  h["mount_name"] = "ext-" + mount_name
+end
+
 RAILS_BENCH_DIR = File.join(CUR_DIRECTORY, "rails_ruby_bench")
 DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 RUBY_DIR = File.join(RAILS_BENCH_DIR, "work", "ruby")
 
+# Cloned in ami.json, but go ahead and update anyway. This shouldn't normally do anything.
 if RAILS_RUBY_BENCH_URL.strip != ""
   Dir.chdir(RAILS_BENCH_DIR) do
     csystem "git remote add benchmark-url #{RAILS_RUBY_BENCH_URL} && git fetch benchmark-url", "error fetching commits from Rails Ruby Bench at #{RAILS_RUBY_BENCH_URL.inspect}"
@@ -75,46 +107,41 @@ if RAILS_RUBY_BENCH_URL.strip != ""
 end
 
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
-clone_or_update_repo RUBY_GIT_URL, RUBY_TAG, RUBY_DIR
 
-# Give a spot to install ruby to
-csystem "sudo mkdir -p #{RUBY_INSTALL_DIR} && sudo chown -R ubuntu #{RUBY_INSTALL_DIR}",
-  "Couldn't create dir #{RUBY_INSTALL_DIR.inspect} to install Ruby to!"
-
-Dir.chdir(RUBY_DIR) do
-  unless File.exists?("configure")
-    csystem "autoconf", "Couldn't run autoconf in #{RUBY_DIR}!"
+benchmark_software["compare_rubies"].each do |ruby_hash|
+  csystem "rvm list", "Error running rvm list!", :debug => true
+  puts "Installing Ruby: #{ruby_hash.inspect}"
+  # Clone the Ruby, then build and mount if necessary
+  if ruby_hash["git_url"]
+    work_dir = File.join(RAILS_BENCH_DIR, "work", ruby_hash["name"])
+    ruby_hash["checkout_dir"] = work_dir
+    clone_or_update_ruby_by_json(ruby_hash, work_dir)
   end
-  unless File.exists?("Makefile")
-    csystem "./configure --prefix #{RUBY_INSTALL_DIR}", "Couldn't run configure in #{RUBY_DIR}!"
-  end
-  csystem "make", "Make failed in #{RUBY_DIR}!"
-  # This should install to the benchmark ruby dir
-  csystem "make install", "Installing Ruby failed in #{RUBY_DIR}!"
-end
-csystem "bash -l -c \"rvm mount #{RUBY_INSTALL_DIR} -n ruby-benchmark\"", "Couldn't mount #{RUBY_DIR.inspect} as ruby-benchmark!"
-csystem "bash -l -c \"rvm use --default ext-ruby-benchmark\"", "Couldn't set ext-ruby-benchmark to rvm default!"
-Dir.chdir(RAILS_BENCH_DIR) { csystem("bash -l -c \"rvm use ext-ruby-benchmark && gem install bundle && bundle\"", "Couldn't install bundler and gems", debug: true) }
-Dir.chdir(DISCOURSE_DIR) { csystem("bash -l -c \"rvm use ext-ruby-benchmark && bundle\"", "Couldn't install bundler and gems", debug: true) }
 
-# If OTHER_RUBIES contains anything, install them via RVM. Useful for benchmarking multiple Rubies.
-OTHER_RUBIES.split(",").compact.each do |other_ruby_version|
-  csystem "bash -l -c \"rvm install #{other_ruby_version}\"", "Couldn't use RVM to install #{other_ruby_version.inspect}!"
+  csystem "rvm list", "Error running rvm list!", :debug => true
+
+  rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
   Dir.chdir(RAILS_BENCH_DIR) do
-    csystem "bash -l -c \"rvm use #{other_ruby_version} && gem install bundler && bundle\"", "Couldn't install bundler or gems for #{RAILS_BENCH_DIR}!"
+    csystem "bash -l -c \"rvm use #{rvm_ruby_name} && gem install bundler && bundle\"", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!"
   end
   Dir.chdir(DISCOURSE_DIR) do
-    csystem "bash -l -c \"rvm use #{other_ruby_version} && bundle\"", "Couldn't install bundler or gems for #{DISCOURSE_DIR}!"
+    csystem "bash -l -c \"rvm use #{rvm_ruby_name} && bundle\"", "Couldn't install bundler or Discourse gems for #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!"
   end
+
+end
+
+File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
+  rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] }
+  f.print rubies.join("\n")
 end
 
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile bundle exec rake db:create\"", "Couldn't create Rails database!"
-  csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile bundle exec rake db:migrate\"", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!"
+  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:create\"", "Couldn't create Rails database!"
+  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:migrate\"", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!"
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
-    csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
+    csystem "bash -l -c \"RAILS_ENV=profile rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
   end
   unless File.exists? "public/uploads"
     FileUtils.mkdir "public/uploads"
@@ -153,13 +180,13 @@ unless contents[patched_line]
 end
 
 Dir.chdir("rails_ruby_bench") do
-  csystem "bash -l -c \"rvm use ext-ruby-benchmark && RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
+  csystem "bash -l -c \"RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
 end
 
 # And check to make sure the benchmark actually runs... But just do a few iterations.
 Dir.chdir("rails_ruby_bench") do
   begin
-    csystem "bash -l -c \"rvm use ext-ruby-benchmark && ./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1\"", "Couldn't successfully run the benchmark!"
+    csystem "bash -l -c \"./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1\"", "Couldn't successfully run the benchmark!"
   rescue SystemPackerBuildError
     # Before dying, let's look at that Rails logfile... Redirect stdout to stderr.
     print "Error running test iterations of the benchmark, printing Rails log to console!\n==========\n"
