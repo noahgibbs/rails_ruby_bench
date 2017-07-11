@@ -216,7 +216,7 @@ test_data = {
   },
   "environment" => {
     "RUBY_VERSION" => RUBY_VERSION,
-    "rvm current" => `rvm current`,
+    "rvm current" => `rvm current`.strip,
   },
   "startup" => {
     "times" => startup_times
