@@ -11,5 +11,3 @@ Figure out how to handle Bundler.with_clean_env for start script invoking Discou
 Add environment vars to allow easily simultaneous building of multiple AMIs with the same EC2 creds, on the same build host
 
 Shut down Puma w/ pumactl or similar, not by killing the process - more reliable, cleaner.
-
-Add support for multiple Ruby versions/tags/SHAs to packer/setup.rb to "race" multiple Rubies. Need to install gems, etc in the Rubies as well.
