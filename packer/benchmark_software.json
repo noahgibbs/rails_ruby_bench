@@ -9,22 +9,6 @@
   },
   "compare_rubies": [
       {
-          "name": "fromsource-2.0.0-p648",
-          "prefix_dir": "/home/ubuntu/work/mri-2.0.0-p648",
-          "git_url": "git://github.com/ruby/ruby.git",
-          "git_tag": "v2_0_0_648"
-      },
-      {
-          "name": "mri-2.1.10",
-          "git_url": "git://github.com/ruby/ruby.git",
-          "git_tag": "v2_1_10"
-      },
-      {
-          "name": "mri-2.2.7",
-          "git_url": "git://github.com/ruby/ruby.git",
-          "git_tag": "v2_2_7"
-      },
-      {
           "name": "mri-2.3.4",
           "git_url": "git://github.com/ruby/ruby.git",
           "git_tag": "v2_3_4"

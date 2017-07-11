@@ -108,6 +108,34 @@ end
 
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
 
+# Install Discourse and Rails Ruby Bench gems into RVM-standard Ruby 2.3.1 installed for Discourse
+Dir.chdir(RAILS_BENCH_DIR) do
+  csystem "bash -l -c \"gem install bundler && bundle\"", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for Discourse's Ruby 2.3.1!"
+end
+Dir.chdir(DISCOURSE_DIR) do
+  csystem "bash -l -c \"bundle\"", "Couldn't install bundler or Discourse gems for #{DISCOURSE_DIR} for Discourse's Ruby 2.3.1!"
+end
+
+Dir.chdir(DISCOURSE_DIR) do
+  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:create\"", "Couldn't create Rails database!"
+  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:migrate\"", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!"
+
+  # TODO: use a better check for whether to rebuild precompiled assets
+  unless File.exists? "public/assets"
+    csystem "bash -l -c \"RAILS_ENV=profile rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
+  end
+  unless File.exists? "public/uploads"
+    FileUtils.mkdir "public/uploads"
+  end
+  conf_db = File.read "config/database.yml"
+  new_contents = conf_db.gsub("pool: 5", "pool: 30")  # Increase database.yml thread pool, including for profile environment
+  if new_contents != conf_db
+    File.open("config/database.yml", "w") do |f|
+      f.print new_contents
+    end
+  end
+end
+
 benchmark_software["compare_rubies"].each do |ruby_hash|
   csystem "rvm list", "Error running rvm list!", :debug => true
   puts "Installing Ruby: #{ruby_hash.inspect}"
@@ -133,26 +161,6 @@ end
 File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
   rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] }
   f.print rubies.join("\n")
-end
-
-Dir.chdir(DISCOURSE_DIR) do
-  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:create\"", "Couldn't create Rails database!"
-  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:migrate\"", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!"
-
-  # TODO: use a better check for whether to rebuild precompiled assets
-  unless File.exists? "public/assets"
-    csystem "bash -l -c \"RAILS_ENV=profile rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
-  end
-  unless File.exists? "public/uploads"
-    FileUtils.mkdir "public/uploads"
-  end
-  conf_db = File.read "config/database.yml"
-  new_contents = conf_db.gsub("pool: 5", "pool: 30")  # Increase database.yml thread pool, including for profile environment
-  if new_contents != conf_db
-    File.open("config/database.yml", "w") do |f|
-      f.print new_contents
-    end
-  end
 end
 
 # Minor bugfix for this version of Discourse. Can remove when I only use 1.8.0+ Discourse?
