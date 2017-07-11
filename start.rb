@@ -126,14 +126,17 @@ def with_running_server
   with_started_server do
     failed_iters = 0
     loop do
-      sleep 0.01
+      sleep 0.1
       output = `curl -f http://localhost:#{PORT_NUM}/ 2>/dev/null`
       if $?.success?
         yield
         return
       else
         failed_iters += 1
-        raise "Too many failed iterations!" if failed_iters > 5_000
+        if failed_iters % 10 == 0
+          puts "Tenth failed iter output:\n#{output}\n==========="
+        end
+        raise "Too many failed iterations!" if failed_iters > 50
       end
     end
   end
