@@ -28,7 +28,7 @@
 	"destination": "/tmp/ami.json"
     }, {
         "type": "shell",
-	"inline": "sudo mv /tmp/ami.json /etc/ami.json"
+	"inline": "sudo mv /tmp/ami.json /home/ubuntu/ami.json"
     }, {
         "type": "shell",
         "script": "discourse_install.sh"
