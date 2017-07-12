@@ -3,11 +3,15 @@
 require "fileutils"
 require "json"
 
-CUR_DIRECTORY = Dir.pwd
+# Set this to true to run the setup on a local machine
+LOCAL = false
 # Whether to build rubies with rvm
-BUILD_RUBY = true
+BUILD_RUBY = !LOCAL
+# Print all commands and show their full output
+VERBOSE = LOCAL
 
-benchmark_software = JSON.load(File.read("/home/ubuntu/benchmark_software.json"))
+base = LOCAL ? File.expand_path('..', __FILE__) : "/home/ubuntu"
+benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
 RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
@@ -29,14 +33,17 @@ SETUP
 
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
-  out = `#{cmd}`
-  print "Running command: #{cmd.inspect}\n" if opts[:debug] || opts["debug"]
+  print "Running command: #{cmd.inspect}\n" if VERBOSE || opts[:debug] || opts["debug"]
+  if VERBOSE
+    system(cmd)
+  else
+    out = `#{cmd}`
+  end
   unless $?.success? || opts[:fail_ok] || opts["fail_ok"]
-    print "Error running command:\n#{cmd.inspect}\nOutput:\n#{out}\n=====\n"
+    puts "Error running command:\n#{cmd.inspect}"
+    puts "Output:\n#{out}\n=====" if out
     raise SystemPackerBuildError.new(err)
   end
-  print "Command output:\n#{out}\n=====\n" if opts[:debug] || opts["debug"]
-  out
 end
 
 def clone_or_update_repo(repo_url, tag, work_dir)
@@ -94,12 +101,16 @@ def clone_or_update_ruby_by_json(h, work_dir)
   h["mount_name"] = "ext-" + mount_name
 end
 
-RAILS_BENCH_DIR = File.join(CUR_DIRECTORY, "rails_ruby_bench")
+if LOCAL
+  RAILS_BENCH_DIR = File.expand_path("../..", __FILE__)
+else
+  RAILS_BENCH_DIR = File.join(Dir.pwd, "rails_ruby_bench")
+end
 DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 RUBY_DIR = File.join(RAILS_BENCH_DIR, "work", "ruby")
 
 # Cloned in ami.json, but go ahead and update anyway. This shouldn't normally do anything.
-if RAILS_RUBY_BENCH_URL.strip != ""
+if RAILS_RUBY_BENCH_URL && RAILS_RUBY_BENCH_URL.strip != ""
   Dir.chdir(RAILS_BENCH_DIR) do
     csystem "git remote add benchmark-url #{RAILS_RUBY_BENCH_URL} && git fetch benchmark-url", "error fetching commits from Rails Ruby Bench at #{RAILS_RUBY_BENCH_URL.inspect}"
     if RAILS_RUBY_BENCH_TAG.strip != ""
@@ -116,6 +127,12 @@ Dir.chdir(RAILS_BENCH_DIR) do
 end
 Dir.chdir(DISCOURSE_DIR) do
   csystem "bash -l -c \"bundle\"", "Couldn't install bundler or Discourse gems for #{DISCOURSE_DIR} for Discourse's Ruby 2.3.1!"
+end
+
+if LOCAL
+  puts "\nIf not done already, you should setup the dependencies for Discourse: redis, postgres and node"
+  puts "https://github.com/discourse/discourse/blob/v1.8.0.beta13/docs/DEVELOPER-ADVANCED.md#preparing-a-fresh-ubuntu-install"
+  puts
 end
 
 Dir.chdir(DISCOURSE_DIR) do
