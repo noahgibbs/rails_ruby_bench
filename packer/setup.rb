@@ -150,10 +150,10 @@ benchmark_software["compare_rubies"].each do |ruby_hash|
 
   rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
   Dir.chdir(RAILS_BENCH_DIR) do
-    csystem "bash -l -c \"rvm use #{rvm_ruby_name} && gem install bundler && bundle\"", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!"
+    csystem "bash -l -c \"rvm use #{rvm_ruby_name} && gem install bundler && bundle\"", "Couldn't install bundler or RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!"
   end
   Dir.chdir(DISCOURSE_DIR) do
-    csystem "bash -l -c \"rvm use #{rvm_ruby_name} && bundle\"", "Couldn't install bundler or Discourse gems for #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!"
+    csystem "bash -l -c \"rvm use #{rvm_ruby_name} && bundle\"", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!"
   end
 
 end
