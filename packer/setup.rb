@@ -41,7 +41,7 @@ def clone_or_update_repo(repo_url, tag, work_dir)
   tag = tag.strip
   if File.exist?(work_dir)
     Dir.chdir(work_dir) do
-      csystem "git pull", "Couldn't 'git pull' in #{work_dir}!"
+      csystem "git fetch", "Couldn't 'git fetch' in #{work_dir}!"
     end
   elsif tag && tag != ""
     cmd = "git clone #{repo_url} -b #{tag} #{work_dir}"
