@@ -187,12 +187,12 @@ unless contents[patched_line]
   end
 end
 
-Dir.chdir("rails_ruby_bench") do
+Dir.chdir(RAILS_BENCH_DIR) do
   csystem "bash -l -c \"RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
 end
 
 # And check to make sure the benchmark actually runs... But just do a few iterations.
-Dir.chdir("rails_ruby_bench") do
+Dir.chdir(RAILS_BENCH_DIR) do
   begin
     csystem "bash -l -c \"./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1\"", "Couldn't successfully run the benchmark!"
   rescue SystemPackerBuildError
