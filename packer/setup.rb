@@ -122,7 +122,7 @@ Dir.chdir(DISCOURSE_DIR) do
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
-    csystem "bash -l -c \"RAILS_ENV=profile rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
+    csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
   end
   unless File.exists? "public/uploads"
     FileUtils.mkdir "public/uploads"
