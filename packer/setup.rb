@@ -4,6 +4,8 @@ require "fileutils"
 require "json"
 
 CUR_DIRECTORY = Dir.pwd
+# Whether to build rubies with rvm
+BUILD_RUBY = true
 
 benchmark_software = JSON.load(File.read("/home/ubuntu/benchmark_software.json"))
 
@@ -136,31 +138,32 @@ Dir.chdir(DISCOURSE_DIR) do
   end
 end
 
-benchmark_software["compare_rubies"].each do |ruby_hash|
-  csystem "rvm list", "Error running rvm list!", :debug => true
-  puts "Installing Ruby: #{ruby_hash.inspect}"
-  # Clone the Ruby, then build and mount if necessary
-  if ruby_hash["git_url"]
-    work_dir = File.join(RAILS_BENCH_DIR, "work", ruby_hash["name"])
-    ruby_hash["checkout_dir"] = work_dir
-    clone_or_update_ruby_by_json(ruby_hash, work_dir)
+if BUILD_RUBY
+  benchmark_software["compare_rubies"].each do |ruby_hash|
+    csystem "rvm list", "Error running rvm list!", :debug => true
+    puts "Installing Ruby: #{ruby_hash.inspect}"
+    # Clone the Ruby, then build and mount if necessary
+    if ruby_hash["git_url"]
+      work_dir = File.join(RAILS_BENCH_DIR, "work", ruby_hash["name"])
+      ruby_hash["checkout_dir"] = work_dir
+      clone_or_update_ruby_by_json(ruby_hash, work_dir)
+    end
+
+    csystem "rvm list", "Error running rvm list!", :debug => true
+
+    rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
+    Dir.chdir(RAILS_BENCH_DIR) do
+      csystem "bash -l -c \"rvm use #{rvm_ruby_name} && gem install bundler && bundle\"", "Couldn't install bundler or RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!"
+    end
+    Dir.chdir(DISCOURSE_DIR) do
+      csystem "bash -l -c \"rvm use #{rvm_ruby_name} && bundle\"", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!"
+    end
   end
 
-  csystem "rvm list", "Error running rvm list!", :debug => true
-
-  rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
-  Dir.chdir(RAILS_BENCH_DIR) do
-    csystem "bash -l -c \"rvm use #{rvm_ruby_name} && gem install bundler && bundle\"", "Couldn't install bundler or RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!"
+  File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
+    rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] }
+    f.print rubies.join("\n")
   end
-  Dir.chdir(DISCOURSE_DIR) do
-    csystem "bash -l -c \"rvm use #{rvm_ruby_name} && bundle\"", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!"
-  end
-
-end
-
-File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
-  rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] }
-  f.print rubies.join("\n")
 end
 
 # Minor bugfix for this version of Discourse. Can remove when I only use 1.8.0+ Discourse?
