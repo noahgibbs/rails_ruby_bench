@@ -3,8 +3,8 @@
 require "fileutils"
 require "json"
 
-# Set this to true to run the setup on a local machine
-LOCAL = false
+# Pass --local to run the setup on a local machine
+LOCAL = ARGV.delete '--local'
 # Whether to build rubies with rvm
 BUILD_RUBY = !LOCAL
 # Print all commands and show their full output
