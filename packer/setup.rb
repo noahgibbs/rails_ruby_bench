@@ -47,21 +47,20 @@ def csystem(cmd, err, opts = {})
 end
 
 def clone_or_update_repo(repo_url, tag, work_dir)
-  tag = tag.strip
-  if File.exist?(work_dir)
-    Dir.chdir(work_dir) do
-      csystem "git fetch", "Couldn't 'git fetch' in #{work_dir}!"
-    end
-  elsif tag && tag != ""
-    cmd = "git clone #{repo_url} -b #{tag} #{work_dir}"
-    puts "Command: #{cmd.inspect}"
-    csystem cmd, "Couldn't 'git clone' at tag/branch #{tag.inspect} into #{work_dir}!"
-  else
-    cmd = "git clone #{repo_url} #{work_dir}"
-    puts "Command: #{cmd.inspect}"
-    csystem cmd, "Couldn't 'git clone' into #{work_dir}!"
+  unless Dir.exist?(work_dir)
+    csystem "git clone #{repo_url} #{work_dir}", "Couldn't 'git clone' into #{work_dir}!", :debug => true
   end
 
+  Dir.chdir(work_dir) do
+    csystem "git fetch", "Couldn't 'git fetch' in #{work_dir}!", :debug => true
+
+    if tag && tag.strip != ""
+      tag = tag.strip
+      csystem "git checkout #{tag}", "Couldn't 'git checkout #{tag}' in #{work_dir}!", :debug => true
+    else
+      csystem "git pull", "Couldn't 'git pull' in #{work_dir}!", :debug => true
+    end
+  end
 end
 
 def clone_or_update_by_json(h, work_dir)
