@@ -7,6 +7,7 @@ require "json"
 LOCAL = ARGV.delete '--local'
 # Whether to build rubies with rvm
 BUILD_RUBY = !LOCAL
+USE_BASH = BUILD_RUBY
 # Print all commands and show their full output
 VERBOSE = LOCAL
 
@@ -33,6 +34,7 @@ SETUP
 
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
+  cmd = "bash -l -c \"#{cmd}\"" if USE_BASH && opts[:bash]
   print "Running command: #{cmd.inspect}\n" if VERBOSE || opts[:debug] || opts["debug"]
   if VERBOSE
     system(cmd)
@@ -80,8 +82,8 @@ def build_and_mount_ruby(source_dir, prefix_dir, mount_name)
     # This should install to the benchmark ruby dir
     csystem "make install", "Installing Ruby failed in #{source_dir}!"
   end
-  csystem "bash -l -c \"rvm mount #{prefix_dir} -n #{mount_name}\"", "Couldn't mount #{source_dir.inspect} as #{mount_name}!"
-  csystem "bash -l -c \"rvm use --default ext-#{mount_name}\"", "Couldn't set ext-#{mount_name} to rvm default!"
+  csystem "rvm mount #{prefix_dir} -n #{mount_name}", "Couldn't mount #{source_dir.inspect} as #{mount_name}!", :bash => true
+  csystem "rvm use --default ext-#{mount_name}", "Couldn't set ext-#{mount_name} to rvm default!", :bash => true
 end
 
 def autogen_name
@@ -122,10 +124,10 @@ clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
 
 # Install Discourse and Rails Ruby Bench gems into RVM-standard Ruby 2.3.1 installed for Discourse
 Dir.chdir(RAILS_BENCH_DIR) do
-  csystem "bash -l -c \"gem install bundler && bundle\"", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for Discourse's Ruby 2.3.1!"
+  csystem "gem install bundler && bundle", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for Discourse's Ruby 2.3.1!", :bash => true
 end
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "bash -l -c \"bundle\"", "Couldn't install bundler or Discourse gems for #{DISCOURSE_DIR} for Discourse's Ruby 2.3.1!"
+  csystem "bundle", "Couldn't install bundler or Discourse gems for #{DISCOURSE_DIR} for Discourse's Ruby 2.3.1!", :bash => true
 end
 
 if LOCAL
@@ -135,12 +137,12 @@ if LOCAL
 end
 
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:create\"", "Couldn't create Rails database!"
-  csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake db:migrate\"", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!"
+  csystem "RAILS_ENV=profile bundle exec rake db:create", "Couldn't create Rails database!", :bash => true
+  csystem "RAILS_ENV=profile bundle exec rake db:migrate", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!", :bash => true
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
-    csystem "bash -l -c \"RAILS_ENV=profile bundle exec rake assets:precompile\"", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!"
+    csystem "RAILS_ENV=profile bundle exec rake assets:precompile", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!", :bash => true
   end
   unless File.exists? "public/uploads"
     FileUtils.mkdir "public/uploads"
@@ -169,10 +171,10 @@ if BUILD_RUBY
 
     rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
     Dir.chdir(RAILS_BENCH_DIR) do
-      csystem "bash -l -c \"rvm use #{rvm_ruby_name} && gem install bundler && bundle\"", "Couldn't install bundler or RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!"
+      csystem "rvm use #{rvm_ruby_name} && gem install bundler && bundle", "Couldn't install bundler or RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
     end
     Dir.chdir(DISCOURSE_DIR) do
-      csystem "bash -l -c \"rvm use #{rvm_ruby_name} && bundle\"", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!"
+      csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
     end
   end
 
@@ -207,13 +209,13 @@ unless contents[patched_line]
 end
 
 Dir.chdir(RAILS_BENCH_DIR) do
-  csystem "bash -l -c \"RAILS_ENV=profile ruby seed_db_data.rb\"", "Couldn't seed the database with profiling sample data!"
+  csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
 end
 
 # And check to make sure the benchmark actually runs... But just do a few iterations.
 Dir.chdir(RAILS_BENCH_DIR) do
   begin
-    csystem "bash -l -c \"./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1\"", "Couldn't successfully run the benchmark!"
+    csystem "./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1", "Couldn't successfully run the benchmark!", :bash => true
   rescue SystemPackerBuildError
     # Before dying, let's look at that Rails logfile... Redirect stdout to stderr.
     print "Error running test iterations of the benchmark, printing Rails log to console!\n==========\n"
