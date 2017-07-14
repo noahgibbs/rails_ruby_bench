@@ -8,15 +8,19 @@ This benchmark steals some code from Discourse
 
 ## Running the Benchmark Locally
 
-First, run packer/setup.rb from the root of this repo. This will clone
-your chosen Ruby and Discourse versions.
+First, run the setup from the root of this repo:
 
-Then set up a Discourse development environment. There's a script in
-the Discourse directory to do it on OS X under
+```bash
+Switch to a 2.3.4 or 2.4.1 Ruby
+$ ruby packer/setup.rb --local
+```
+
+You will also need to install Discourse dependencies.
+There's a script in the Discourse directory to do it on OS X under
 work/discourse/script/osx_dev.
+Refer to [this page](https://github.com/discourse/discourse/blob/v1.8.0.beta13/docs/DEVELOPER-ADVANCED.md#preparing-a-fresh-ubuntu-install) for Linux.
 
-Then run "RAILS\_ENV=profile ./seed\_db\_data.rb". to create
-account data in your database.
+Rerun the setup until it succeeds.
 
 Then run start.rb to run the server and the benchmark.
 
