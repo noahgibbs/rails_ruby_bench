@@ -100,6 +100,18 @@ def array_mean(arr)
   arr.inject(0.0, &:+) / arr.size
 end
 
+# Calculate variance based on the Wikipedia article of algorithms for variance.
+# https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+# Includes Bessel's correction.
+def array_variance(arr)
+  n = arr.size
+  return nil if arr.empty? || n < 2
+
+  total = arr.inject(0.0, &:+)
+  total_sq_over_n = total * total / n
+  variance = (arr.inject(0.0) { |accum, xi| accum + (xi * xi - total_sq_over_n) }) / (n - 1.0)
+end
+
 req_time_by_cohort.keys.sort.each do |cohort|
   data = req_time_by_cohort[cohort]
   data.sort! # Sort request times lowest-to-highest for use with percentile()
@@ -130,15 +142,17 @@ req_time_by_cohort.keys.sort.each do |cohort|
   end
 
   print "--\n  Throughput in reqs/sec for each full run:\n"
-  print "  Mean: #{array_mean(throughputs)} Median: #{percentile(throughputs, 50)}\n"
+  print "  Mean: #{array_mean(throughputs).inspect} Median: #{percentile(throughputs, 50).inspect} Variance: #{array_variance(throughputs).inspect}\n"
   process_output[:processed][:cohort][cohort][:throughput_mean] = array_mean(throughputs)
   process_output[:processed][:cohort][cohort][:throughput_median] = percentile(throughputs, 50)
+  process_output[:processed][:cohort][cohort][:throughput_variance] = array_variance(throughputs)
   print "  #{throughputs.inspect}\n\n"
 
   process_output[:processed][:cohort][cohort][:startup_mean] = array_mean(startup_times)
   process_output[:processed][:cohort][cohort][:startup_median] = percentile(startup_times, 50)
+  process_output[:processed][:cohort][cohort][:startup_variance] = array_variance(startup_times)
   print "--\n  Startup times for this cohort:\n"
-  print "  Mean: #{array_mean(startup_times).inspect} Median: #{percentile(startup_times, 50).inspect}\n"
+  print "  Mean: #{array_mean(startup_times).inspect} Median: #{percentile(startup_times, 50).inspect} Variance: #{array_variance(startup_times).inspect}\n"
 end
 
 print "******************\n"
