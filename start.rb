@@ -87,11 +87,9 @@ def server_start
   end
 end
 
-# TODO: Proper audit on this code. Right now it assumes no child processes means no Rails server running, which isn't quite right.
-
 def server_stop
-  Process.kill("-INT", @started_pid)
-  print "server_stop: Interrupted Rails server at expected PID #{@started_pid.inspect}.\n"
+  csystem "RAILS_ENV=profile bundle exec pumactl halt --control-token #{CONTROL_TOKEN} --control-url tcp://127.0.0.1:#{CONTROL_PORT}", "Error trying to stop Puma via pumactl!"
+  print "server_stop: Asked Puma to stop, expected PID #{@started_pid.inspect}.\n"
   loop do
     # Verify that server we started is sufficiently dead before we restart
     STDERR.print "Waiting for dead PID expecting #{@started_pid.inspect}\n"
@@ -160,6 +158,10 @@ end
 
 require_relative "user_simulator"
 
+Signal.trap("HUP") do
+  print "Ignoring SIGHUP...\n"
+end
+
 # One Burn-in Iteration
 print "Starting and stopping server to preload caches...\n"
 full_iteration_start_stop
@@ -172,15 +174,25 @@ worker_times = []
 warmup_times = []
 
 with_running_server do
+
+  # By randomizing all "real" actions before all warmups, we guarantee
+  # that multiple runs with different numbers of warmups but the same
+  # number of worker iterations will always run the same worker
+  # *actions* for that number of iterations.  But we always want to
+  # *run* warmup actions *first*, even if we *randomize* them
+  # *second.*
+  worker_actions = actions_for_iterations(worker_iterations)
+  warmup_actions = actions_for_iterations(warmup_iterations)
+
   # First, warmup iterations.
   print "Warmup iterations: #{warmup_iterations}\n"
   unless warmup_iterations == 0
-    warmup_times = multithreaded_actions(warmup_iterations, workers, PORT_NUM)
+    warmup_times = multithreaded_actions(warmup_actions, workers, PORT_NUM)
   end
   # Second, real iterations.
   print "Benchmark iterations: #{worker_iterations}\n"
   unless worker_iterations == 0
-    worker_times = multithreaded_actions(worker_iterations, workers, PORT_NUM)
+    worker_times = multithreaded_actions(worker_actions, workers, PORT_NUM)
   end
 end # Stop the Rails server after all interactions have finished.
 
@@ -218,6 +230,9 @@ test_data = {
     "RUBY_VERSION" => RUBY_VERSION,
     "RUBY_DESCRIPTION" => RUBY_DESCRIPTION,
     "rvm current" => `rvm current 2>&1`.strip,
+    "discourse git status" => `cd work/discourse && git status`,
+    "discourse git sha" => `cd work/discourse && git rev-parse HEAD`,
+    "ec2 instance id" => `wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`,
   },
   "startup" => {
     "times" => startup_times

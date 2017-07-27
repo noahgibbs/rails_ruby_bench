@@ -152,12 +152,16 @@ def time_actions(actions, user_offset, port_num)
   times
 end
 
-def multithreaded_actions(iterations, worker_threads, port_num)
+def actions_for_iterations(num_iterations)
+  (1..num_iterations).map { |i| [ ACTIONS.sample, sentence, rand() ] }
+end
+
+def multithreaded_actions(actions, worker_threads, port_num)
   output_mutex = Mutex.new
   output_times = []
 
-  actions = (1..iterations).map { |i| [ ACTIONS.sample, sentence, rand() ] }
-  actions_per_thread = (iterations + worker_threads - 1) / worker_threads  # Round up
+  #actions = (1..iterations).map { |i| [ ACTIONS.sample, sentence, rand() ] }
+  actions_per_thread = (actions.size + worker_threads - 1) / worker_threads  # Round up
 
   threads = (0..(worker_threads-1)).map do |offset|
     Thread.new do
