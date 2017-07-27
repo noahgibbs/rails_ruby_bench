@@ -1,5 +1,3 @@
-Rails Bench
-
 Go through a full run of test data, printing out exactly what it does, and find all the problems. Also, view Discourse after a full run and see all the problems.
 
 Figure out what the "final composite" score should look like. Right now, just looking at execution time for threads.
