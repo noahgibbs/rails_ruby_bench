@@ -88,7 +88,7 @@ def server_start
 end
 
 def server_stop
-  csystem "RAILS_ENV=profile bundle exec pumactl halt --control-token #{CONTROL_TOKEN} --control-url tcp://127.0.0.1:#{CONTROL_PORT}", "Error trying to stop Puma via pumactl!"
+  csystem "RAILS_ENV=profile bundle exec pumactl --control-token #{CONTROL_TOKEN} --control-url tcp://127.0.0.1:#{CONTROL_PORT} halt", "Error trying to stop Puma via pumactl!"
   print "server_stop: Asked Puma to stop, expected PID #{@started_pid.inspect}.\n"
   loop do
     # Verify that server we started is sufficiently dead before we restart
