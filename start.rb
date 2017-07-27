@@ -65,7 +65,7 @@ CONTROL_TOKEN = "VeryModelOfAModernMajorGeneral"
 
 DISCOURSE_REVISION = `cd work/discourse && git rev-parse HEAD`.chomp
 
-class SystemCallError < RuntimeError; end
+class BenchmarkSystemError < RuntimeError; end
 
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
@@ -73,7 +73,7 @@ def csystem(cmd, err, opts = {})
   print "Running command: #{cmd.inspect}\n" if opts[:debug] || opts["debug"]
   unless $?.success? || opts[:fail_ok] || opts["fail_ok"]
     print "Error running command:\n#{cmd.inspect}\nOutput:\n#{out}\n=====\n"
-    raise SystemCallError.new(err)
+    raise BenchmarkSystemError.new(err)
   end
   print "Command output:\n#{out}\n=====\n" if opts[:debug] || opts["debug"]
   out
@@ -92,7 +92,7 @@ end
 def server_stop
   begin
     csystem "RAILS_ENV=profile bundle exec pumactl --control-token #{CONTROL_TOKEN} --control-url tcp://127.0.0.1:#{CONTROL_PORT} halt", "Error trying to stop Puma via pumactl!"
-  rescue
+  rescue BenchmarkSystemError
     # Error stopping w/ pumactl, try just killing the process
     Process.kill("-INT", @started_pid)
   end
