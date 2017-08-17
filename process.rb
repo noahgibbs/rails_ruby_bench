@@ -107,9 +107,14 @@ def array_variance(arr)
   n = arr.size
   return nil if arr.empty? || n < 2
 
-  total = arr.inject(0.0, &:+)
-  total_sq_over_n = total * total / n
-  variance = (arr.inject(0.0) { |accum, xi| accum + (xi * xi - total_sq_over_n) }) / (n - 1.0)
+  ex = ex2 = 0
+  arr.each do |x|
+    diff = x - arr[0]
+    ex += diff
+    ex2 += diff * diff
+  end
+
+  (ex2 - (ex * ex) / arr.size) / (arr.size - 1)
 end
 
 req_time_by_cohort.keys.sort.each do |cohort|
@@ -122,7 +127,7 @@ req_time_by_cohort.keys.sort.each do |cohort|
   startup_times = startup_by_cohort[cohort].sort
 
   cohort_printable = cohort_indices.zip(cohort.split(",")).map { |a, b| "#{a}: #{b}" }.join(", ")
-  print "=====\nCohort: #{cohort_printable}, # of data points: #{data.size}, full runs: #{runs.size}\n"
+  print "=====\nCohort: #{cohort_printable}, # of data points: #{data.size} http / #{startup_times.size} startup, full runs: #{runs.size}\n"
   process_output[:processed][:cohort][cohort] = {
     data_points: data.size,
     full_runs: runs.size,
