@@ -44,7 +44,7 @@ INPUT_FILES.each do |f|
 
   # Assign a cohort to these samples
   cohort_parts = cohort_indices.map do |cohort_elt|
-    raise "Unexpected file format for file #{f.inspect}!" unless d["settings"] && d["environment"]
+    raise "Unexpected file format for file #{f.inspect}!" unless d && d["settings"] && d["environment"]
     item = d["settings"][cohort_elt] || d["environment"][cohort_elt]
     item
   end
