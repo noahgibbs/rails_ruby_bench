@@ -3,7 +3,7 @@
 require "json"
 require "optparse"
 
-cohorts_by = "RUBY_VERSION,warmup_iterations"
+cohorts_by = "RUBY_VERSION,warmup_iterations,discourse_revision"
 input_glob = "rails_ruby_bench_*.json"
 
 OptionParser.new do |opts|
@@ -44,7 +44,7 @@ INPUT_FILES.each do |f|
 
   # Assign a cohort to these samples
   cohort_parts = cohort_indices.map do |cohort_elt|
-    raise "Unexpected file format for file #{f.inspect}!" unless d["settings"] && d["environment"]
+    raise "Unexpected file format for file #{f.inspect}!" unless d && d["settings"] && d["environment"]
     item = d["settings"][cohort_elt] || d["environment"][cohort_elt]
     item
   end
@@ -100,6 +100,23 @@ def array_mean(arr)
   arr.inject(0.0, &:+) / arr.size
 end
 
+# Calculate variance based on the Wikipedia article of algorithms for variance.
+# https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+# Includes Bessel's correction.
+def array_variance(arr)
+  n = arr.size
+  return nil if arr.empty? || n < 2
+
+  ex = ex2 = 0
+  arr.each do |x|
+    diff = x - arr[0]
+    ex += diff
+    ex2 += diff * diff
+  end
+
+  (ex2 - (ex * ex) / arr.size) / (arr.size - 1)
+end
+
 req_time_by_cohort.keys.sort.each do |cohort|
   data = req_time_by_cohort[cohort]
   data.sort! # Sort request times lowest-to-highest for use with percentile()
@@ -110,7 +127,7 @@ req_time_by_cohort.keys.sort.each do |cohort|
   startup_times = startup_by_cohort[cohort].sort
 
   cohort_printable = cohort_indices.zip(cohort.split(",")).map { |a, b| "#{a}: #{b}" }.join(", ")
-  print "=====\nCohort: #{cohort_printable}, # of data points: #{data.size}, full runs: #{runs.size}\n"
+  print "=====\nCohort: #{cohort_printable}, # of data points: #{data.size} http / #{startup_times.size} startup, full runs: #{runs.size}\n"
   process_output[:processed][:cohort][cohort] = {
     data_points: data.size,
     full_runs: runs.size,
@@ -130,15 +147,17 @@ req_time_by_cohort.keys.sort.each do |cohort|
   end
 
   print "--\n  Throughput in reqs/sec for each full run:\n"
-  print "  Mean: #{array_mean(throughputs)} Median: #{percentile(throughputs, 50)}\n"
+  print "  Mean: #{array_mean(throughputs).inspect} Median: #{percentile(throughputs, 50).inspect} Variance: #{array_variance(throughputs).inspect}\n"
   process_output[:processed][:cohort][cohort][:throughput_mean] = array_mean(throughputs)
   process_output[:processed][:cohort][cohort][:throughput_median] = percentile(throughputs, 50)
+  process_output[:processed][:cohort][cohort][:throughput_variance] = array_variance(throughputs)
   print "  #{throughputs.inspect}\n\n"
 
   process_output[:processed][:cohort][cohort][:startup_mean] = array_mean(startup_times)
   process_output[:processed][:cohort][cohort][:startup_median] = percentile(startup_times, 50)
+  process_output[:processed][:cohort][cohort][:startup_variance] = array_variance(startup_times)
   print "--\n  Startup times for this cohort:\n"
-  print "  Mean: #{array_mean(startup_times).inspect} Median: #{percentile(startup_times, 50).inspect}\n"
+  print "  Mean: #{array_mean(startup_times).inspect} Median: #{percentile(startup_times, 50).inspect} Variance: #{array_variance(startup_times).inspect}\n"
 end
 
 print "******************\n"

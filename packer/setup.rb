@@ -219,7 +219,7 @@ Dir.chdir(RAILS_BENCH_DIR) do
   rescue SystemPackerBuildError
     # Before dying, let's look at that Rails logfile... Redirect stdout to stderr.
     print "Error running test iterations of the benchmark, printing Rails log to console!\n==========\n"
-    print `tail -80 work/discourse/log/profile.log`   # If we echo too many lines they just get cut off by Packer
+    print `tail -60 work/discourse/log/profile.log`   # If we echo too many lines they just get cut off by Packer
     print "=============\n"
     raise # Re-raise the error, we still want to die.
   end
