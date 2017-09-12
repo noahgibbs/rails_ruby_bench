@@ -63,8 +63,6 @@ RANDOM_SEED = random_seed
 CONTROL_PORT = 9939
 CONTROL_TOKEN = "VeryModelOfAModernMajorGeneral"
 
-DISCOURSE_REVISION = `cd work/discourse && git rev-parse HEAD`.chomp
-
 class BenchmarkSystemError < RuntimeError; end
 
 # Checked system - error if the command fails
@@ -231,14 +229,16 @@ test_data = {
     "puma_threads" => puma_threads,
     "port_num" => port_num,
     "out_dir" => out_dir,
-    "discourse_revision" => DISCOURSE_REVISION,
+    "discourse_revision" => `cd work/discourse && git rev-parse HEAD`.chomp,
   },
   "environment" => {
     "RUBY_VERSION" => RUBY_VERSION,
     "RUBY_DESCRIPTION" => RUBY_DESCRIPTION,
     "rvm current" => `rvm current 2>&1`.strip,
     "discourse git status" => `cd work/discourse && git status`,
-    "discourse git sha" => `cd work/discourse && git rev-parse HEAD`,
+    "discourse git sha" => `cd work/discourse && git rev-parse HEAD`.chomp,
+    "rails_ruby_bench git status" => `git status`,
+    "rails_ruby_bench git sha" => `git rev-parse HEAD`,
     "ec2 instance id" => `wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`,
   },
   "startup" => {
