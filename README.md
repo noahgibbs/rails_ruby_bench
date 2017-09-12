@@ -45,9 +45,15 @@ To create your own AMI, see packer/README.md in this Git repo.
 With your AMI (or using a public AMI), you can launch an instance as
 normal for AWS. Here's an example command line:
 
-    aws ec2 run-instances --image-id ami-745b8262 --count 1 --instance-type m4.2xlarge --key-name MyKeyPair --placement Tenancy=dedicated
+    aws ec2 run-instances --image-id ami-f678218d --count 1 --instance-type m4.2xlarge --key-name MyKeyPair --placement Tenancy=dedicated
 
-Replace ami-745b8262 with the current latest public AMI, or one you built.
+Replace "MyKeyPair" with the name of your own AWS keypair. You can, of course, replace the AMI ID with the current latest public AMI, or one you built.
+
+The current publicly available AMIs are:
+
+    ami-554a4543 for Discourse v1.5 and Ruby 2.0.0 through 2.3.4
+
+    ami-f678218d for Discourse v1.8 and Ruby 2.3.4 and 2.4.1
 
 ## Debugging and AWS
 
