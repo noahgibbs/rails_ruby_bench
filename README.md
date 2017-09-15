@@ -6,7 +6,42 @@ benchmark for Rails applications.
 This benchmark steals some code from Discourse
 (e.g. user\_simulator.rb, seed\_db\_data.rb), so it's licensed GPLv2.
 
-## Running the Benchmark Locally
+## Running the Benchmark Locally (Easy Version)
+
+Make sure to install the gems:
+
+    $ bundle
+
+Then, get Discourse set up:
+
+    $ cd work/discourse
+    $ bundle
+    $ rake db:create db:migrate  # If necessary, db:drop first
+
+Then, run the database seeding script:
+
+    $ cd ../.. # Back to root directory rather than work/discourse
+    $ ruby seed_db_data.rb  # And wait awhile - it's slow
+
+Now you can run the benchmark:
+
+    $ ./start.rb
+
+## Command-Line Options
+
+Start.rb supports a number of options:
+
+    -r NUMBER      Set the random seed
+    -i NUMBER      Number of total iterations (default: 1500)
+    -n NUMBER      Number of load threads in the user simulator
+    -s NUMBER      Number of start/stop iterations, measuring time to first successful request
+    -w NUMBER      Number of warmup HTTP requests before timing
+    -p NUMBER      Port number for Puma server (default: 4567)
+    -o DIR         Directory for JSON output
+    -t NUMBER      Threads per Puma server
+    -c NUMBER      Number of cluster processes for Puma
+
+## Running the Benchmark Locally (Complete Version)
 
 First, run the setup from the root of this repo:
 
