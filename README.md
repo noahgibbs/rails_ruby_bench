@@ -90,6 +90,21 @@ The current publicly available AMIs are:
 
     ami-f678218d for Discourse v1.8 and Ruby 2.3.4 and 2.4.1
 
+## Debugging with the AMI
+
+Example command lines:
+
+    aws ec2 run-instances --count 1 --instance-type m4.2xlarge --key-name my-ssh-key-name --placement Tenancy=dedicated --image-id ami-f678218d
+    ssh -i ~/.ssh/my-ssh-key-name.pem ubuntu@ec2-34-228-227-234.compute-1.amazonaws.com
+    cd rails_ruby_bench
+    ./in_each_ruby.rb "for i in {1..20}; do ./start.rb -i 3000 -w 100 -s 0; done"
+
+You'll need to find the public DNS name of the VM you created somehow. I normally use the EC2 dashboard. Similarly, you should use an SSH key name that exists in your AWS account. The parameters above are for an m4.2xlarge dedicated instance. That's expensive as AWS goes, but will also give you reproducible results that you can compare directly with mine. If you use a much smaller instance, you'll want to reduce the number of load-testing threads and Puma processes and threads.
+
+I normally copy the JSON files back to my own machine, something like:
+
+> scp -i ~/.ssh/my-ssh-key-name.pem ubuntu@ec2-34-228-227-234.compute-1.amazonaws.com:~/rails_ruby_bench/*.json ./my_local_directory
+
 ## Debugging and AWS
 
 If you'd like to change the behavior of the AWS image, you can use AWS
@@ -97,16 +112,15 @@ user data to run a script on boot. See
 "http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html".
 
 By default, the Rails benchmark is git-cloned under
-~ubuntu/rails\_ruby\_bench, and Ruby and Discourse are cloned under
-the work subdirectory of that repository. The built Ruby is installed
-into /usr/local/benchmark/ruby and mounted using rvm for the
-benchmark. If you want to change any of this when starting your own
-instance, those are great places to begin.
+~ubuntu/rails\_ruby\_bench, and Discourse is cloned under the work
+subdirectory of that repository. The built Rubies are mounted using
+rvm for the benchmark. If you want to change anything when starting
+your own instance, those are great places to begin.
 
 By default, the image won't update or rebuild Ruby or Discourse, nor
-update the Rails Ruby benchmark on boot. That is, by default it will
-use the versions of all of those things that were current when the AMI
-was built. But you can modify your own image later however you like.
+update the Rails Ruby benchmark on boot. It will use the versions of
+all of those things that were current when the AMI was built. But you
+can modify your own image later however you like.
 
 ## Decisions and Intent
 
