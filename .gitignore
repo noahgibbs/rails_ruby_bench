@@ -3,3 +3,4 @@ work/ruby
 packer/ec2_amazon-ebs.pem
 
 process_output.json
+tmp/cache
