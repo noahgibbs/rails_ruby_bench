@@ -3,7 +3,7 @@
 require "json"
 require "optparse"
 
-cohorts_by = "RUBY_VERSION,warmup_iterations,discourse_revision"
+cohorts_by = "RUBY_VERSION,warmup_iterations,discourse_revision,random_seed"
 input_glob = "rails_ruby_bench_*.json"
 
 OptionParser.new do |opts|
