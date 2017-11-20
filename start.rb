@@ -18,6 +18,7 @@ warmup_iterations = 300  # Need to test warmup iterations properly...
 workers = 30
 port_num = 4567
 out_dir = "."
+out_file = nil
 puma_processes = 10
 puma_threads = 6
 
@@ -44,6 +45,9 @@ OptionParser.new do |opts|
   opts.on("-o", "--out-dir DIRECTORY", "directory to write JSON output to") do |d|
     out_dir = d
   end
+  opts.on("-f", "--out-file FILENAME", "filename to write JSON output to") do |f|
+    out_file = f
+  end
   opts.on("-t", "--threads-per-server NUMBER", "number of Puma threads per server process") do |t|
     puma_threads = t.to_i
   end
@@ -52,7 +56,7 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-raise "No such output directory!" unless File.directory?(out_dir)
+raise "No such output directory as #{out_dir.inspect}!" unless File.directory?(out_dir)
 
 # Make the constant accessible inside the method definitions
 PORT_NUM = port_num
@@ -229,6 +233,7 @@ test_data = {
     "puma_threads" => puma_threads,
     "port_num" => port_num,
     "out_dir" => out_dir,
+    "out_file" => out_file || false,
     "discourse_revision" => `cd work/discourse && git rev-parse HEAD`.chomp,
   },
   "environment" => {
@@ -252,7 +257,7 @@ test_data = {
   },
 }
 
-json_filename = File.join(out_dir, "rails_ruby_bench_#{Time.now.to_i}.json")
+json_filename = File.join(out_dir, out_file || "rails_ruby_bench_#{Time.now.to_i}.json")
 File.open(json_filename, "w") do |f|
   f.print JSON.pretty_generate(test_data)
   f.print "\n"
