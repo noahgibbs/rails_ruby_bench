@@ -158,7 +158,7 @@ end
 
 if BUILD_RUBY
   benchmark_software["compare_rubies"].each do |ruby_hash|
-    csystem "rvm list", "Error running rvm list!", :debug => true
+    csystem "rvm list", "Error running rvm list [1] on Ruby #{ruby_hash.inspect}", :debug => true
     puts "Installing Ruby: #{ruby_hash.inspect}"
     # Clone the Ruby, then build and mount if necessary
     if ruby_hash["git_url"]
@@ -167,23 +167,27 @@ if BUILD_RUBY
       clone_or_update_ruby_by_json(ruby_hash, work_dir)
     end
 
-    csystem "rvm list", "Error running rvm list!", :debug => true
+    #csystem "rvm list #2", "Error running rvm list [2] on Ruby #{ruby_hash.inspect}!", :debug => true
+    puts "Mount the built Ruby: #{ruby_hash.inspect}"
 
     rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
     Dir.chdir(RAILS_BENCH_DIR) do
       csystem "rvm use #{rvm_ruby_name} && gem install bundler && bundle", "Couldn't install bundler or RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
     end
+    puts "Install Discourse gems in Ruby: #{ruby_hash.inspect}"
     Dir.chdir(DISCOURSE_DIR) do
       csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
     end
   end
 
+  puts "Create benchmark_ruby_versions.txt"
   File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
     rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] }
     f.print rubies.join("\n")
   end
 end
 
+puts "Add assets.rb initializer for Discourse"
 # Minor bugfix for this version of Discourse. Can remove when I only use 1.8.0+ Discourse?
 ASSETS_INIT = File.join(DISCOURSE_DIR, "config/initializers/assets.rb")
 unless File.exists?(ASSETS_INIT)
@@ -194,6 +198,7 @@ unless File.exists?(ASSETS_INIT)
   end
 end
 
+puts "Hack to disable CSRF protection during benchmark..."
 # Turn off CSRF protection for Discourse in the benchmark. I have no idea why
 # user_simulator's CSRF handling stopped working between Discourse 1.7.X and
 # 1.8.0.beta10, but it clearly did. This is a horrible workaround and should
@@ -209,6 +214,7 @@ unless contents[patched_line]
 end
 
 Dir.chdir(RAILS_BENCH_DIR) do
+  puts "Adding seed data..."
   csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
 end
 

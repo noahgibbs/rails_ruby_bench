@@ -258,6 +258,7 @@ test_data = {
 }
 
 json_filename = File.join(out_dir, out_file || "rails_ruby_bench_#{Time.now.to_i}.json")
+print "Writing run data to #{json_filename}...\n"
 File.open(json_filename, "w") do |f|
   f.print JSON.pretty_generate(test_data)
   f.print "\n"
