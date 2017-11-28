@@ -230,3 +230,5 @@ Dir.chdir(RAILS_BENCH_DIR) do
     raise # Re-raise the error, we still want to die.
   end
 end
+
+FileUtils.touch "/tmp/setup_ran_correctly"
