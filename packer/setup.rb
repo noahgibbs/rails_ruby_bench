@@ -3,8 +3,8 @@
 require "fileutils"
 require "json"
 
-# Pass --local to run the setup on a local machine
-LOCAL = ARGV.delete '--local'
+# Pass --local to run the setup on a local machine, or set RRB_LOCAL
+LOCAL = (ARGV.delete '--local') || ENV["RRB_LOCAL"]
 # Whether to build rubies with rvm
 BUILD_RUBY = !LOCAL
 USE_BASH = BUILD_RUBY
@@ -16,8 +16,6 @@ benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
 RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
-DISCOURSE_GIT_URL    = benchmark_software["discourse"]["git_url"]
-DISCOURSE_TAG        = benchmark_software["discourse"]["git_tag"]
 
 class SystemPackerBuildError < RuntimeError; end
 
@@ -107,8 +105,6 @@ if LOCAL
 else
   RAILS_BENCH_DIR = File.join(Dir.pwd, "rails_ruby_bench")
 end
-DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
-RUBY_DIR = File.join(RAILS_BENCH_DIR, "work", "ruby")
 
 # Cloned in ami.json, but go ahead and update anyway. This shouldn't normally do anything.
 if RAILS_RUBY_BENCH_URL && RAILS_RUBY_BENCH_URL.strip != ""
@@ -120,45 +116,13 @@ if RAILS_RUBY_BENCH_URL && RAILS_RUBY_BENCH_URL.strip != ""
   end
 end
 
-clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
-
-# Install Discourse and Rails Ruby Bench gems into RVM-standard Ruby 2.3.1 installed for Discourse
+# Install Rails Ruby Bench gems into system Ruby
 Dir.chdir(RAILS_BENCH_DIR) do
-  csystem "gem install bundler && bundle", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for Discourse's Ruby 2.3.1!", :bash => true
-end
-Dir.chdir(DISCOURSE_DIR) do
-  csystem "bundle", "Couldn't install bundler or Discourse gems for #{DISCOURSE_DIR} for Discourse's Ruby 2.3.1!", :bash => true
-end
-
-if LOCAL
-  puts "\nIf not done already, you should setup the dependencies for Discourse: redis, postgres and node"
-  puts "https://github.com/discourse/discourse/blob/v1.8.0.beta13/docs/DEVELOPER-ADVANCED.md#preparing-a-fresh-ubuntu-install"
-  puts
-end
-
-Dir.chdir(DISCOURSE_DIR) do
-  csystem "RAILS_ENV=profile bundle exec rake db:create", "Couldn't create Rails database!", :bash => true
-  csystem "RAILS_ENV=profile bundle exec rake db:migrate", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!", :bash => true
-
-  # TODO: use a better check for whether to rebuild precompiled assets
-  unless File.exists? "public/assets"
-    csystem "RAILS_ENV=profile bundle exec rake assets:precompile", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!", :bash => true
-  end
-  unless File.exists? "public/uploads"
-    FileUtils.mkdir "public/uploads"
-  end
-  conf_db = File.read "config/database.yml"
-  new_contents = conf_db.gsub("pool: 5", "pool: 30")  # Increase database.yml thread pool, including for profile environment
-  if new_contents != conf_db
-    File.open("config/database.yml", "w") do |f|
-      f.print new_contents
-    end
-  end
+  csystem "gem install bundler && bundle", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for system Ruby 2.3.1!", :bash => true
 end
 
 if BUILD_RUBY
   benchmark_software["compare_rubies"].each do |ruby_hash|
-    csystem "rvm list", "Error running rvm list [1] on Ruby #{ruby_hash.inspect}", :debug => true
     puts "Installing Ruby: #{ruby_hash.inspect}"
     # Clone the Ruby, then build and mount if necessary
     if ruby_hash["git_url"]
@@ -174,42 +138,12 @@ if BUILD_RUBY
     Dir.chdir(RAILS_BENCH_DIR) do
       csystem "rvm use #{rvm_ruby_name} && gem install bundler && bundle", "Couldn't install bundler or RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
     end
-    puts "Install Discourse gems in Ruby: #{ruby_hash.inspect}"
-    Dir.chdir(DISCOURSE_DIR) do
-      csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
-    end
   end
 
   puts "Create benchmark_ruby_versions.txt"
   File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
     rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] }
     f.print rubies.join("\n")
-  end
-end
-
-puts "Add assets.rb initializer for Discourse"
-# Minor bugfix for this version of Discourse. Can remove when I only use 1.8.0+ Discourse?
-ASSETS_INIT = File.join(DISCOURSE_DIR, "config/initializers/assets.rb")
-unless File.exists?(ASSETS_INIT)
-  File.open(ASSETS_INIT, "w") do |f|
-    f.write <<-INITIALIZER
-      Rails.application.config.assets.precompile += %w( jquery_include.js )
-    INITIALIZER
-  end
-end
-
-puts "Hack to disable CSRF protection during benchmark..."
-# Turn off CSRF protection for Discourse in the benchmark. I have no idea why
-# user_simulator's CSRF handling stopped working between Discourse 1.7.X and
-# 1.8.0.beta10, but it clearly did. This is a horrible workaround and should
-# be fixed when I figure out the problem.
-APP_CONTROLLER = File.join(DISCOURSE_DIR, "app/controllers/application_controller.rb")
-contents = File.read(APP_CONTROLLER)
-original_line = "protect_from_forgery"
-patched_line = "#protect_from_forgery"
-unless contents[patched_line]
-  File.open(APP_CONTROLLER, "w") do |f|
-    f.print contents.gsub(original_line, patched_line)
   end
 end
 

@@ -4,3 +4,4 @@ packer/ec2_amazon-ebs.pem
 
 process_output.json
 tmp/cache
+packer/benchmark_software_*.json
