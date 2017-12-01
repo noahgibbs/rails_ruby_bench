@@ -1,3 +1,5 @@
+set -e
+
 # To be run as user "postgres"
 createuser --createdb --superuser -Upostgres $(cat /tmp/username)
 psql -c "ALTER USER $(cat /tmp/username) WITH PASSWORD 'password';"

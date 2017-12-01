@@ -1,5 +1,7 @@
 # To be run as "ubuntu" user with sudo access.
 
+set -e
+
 #sleep 30 # Time for OS to boot properly during AMI build
 
 # No ~/.bash_profile? Make one that sources ~/.bashrc. Otherwise you won't like what happens
