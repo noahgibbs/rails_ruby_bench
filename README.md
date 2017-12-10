@@ -14,7 +14,9 @@ Make sure to install the gems:
 
 Then, get Discourse set up:
 
-    $ cd work/discourse
+    $ cd work
+    $ git clone https://github.com/discourse/discourse.git
+    $ cd discourse
     $ bundle
     $ rake db:create db:migrate  # If necessary, db:drop first
 
