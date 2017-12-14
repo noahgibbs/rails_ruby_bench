@@ -138,8 +138,8 @@ def time_actions(actions, user_offset, port_num)
   client.get_csrf_token
 
   log "Logging in as #{user.username.inspect}... (not part of benchmark request time(s))"
-  client.request :post, "/session", { "login" => user.username, "password" => "password" }
-  client.request :post, "/login", { "login" => user.username, "password" => "password", "redirect" => "http://localhost:#{port_num}/" }
+  client.request :post, "/session", { "login" => user.username, "password" => "longpassword" }
+  client.request :post, "/login", { "login" => user.username, "password" => "longpassword", "redirect" => "http://localhost:#{port_num}/" }
 
   times = []
   t_last = Time.now
