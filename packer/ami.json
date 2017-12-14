@@ -59,7 +59,7 @@
         "script": "setup_discourse.rb"
     }, {
         "type": "shell",
-        "inline": "[ -f /tmp/setup_discourse_ran_correctly ] || (echo 'Setup_discourse.rb failed to run to completion...'; exit 1)  # Make sure setup.rb ran correctly"
+        "inline": "[ -f /tmp/setup_discourse_ran_correctly ] || (echo 'Setup_discourse.rb failed to run to completion...'; exit 1)  # Make sure setup_discourse.rb ran correctly"
     }, {
         "type": "shell",
         "environment_vars": [
@@ -77,7 +77,7 @@
         "script": "setup_discourse_gems.rb"
     }, {
         "type": "shell",
-        "inline": "[ -f /tmp/setup_discourse_gems_ran_correctly ] || (echo 'Setup_discourse.rb failed to run to completion...'; exit 1)  # Make sure setup.rb ran correctly"
+        "inline": "[ -f /tmp/setup_discourse_gems_ran_correctly ] || (echo 'Setup_discourse.rb failed to run to completion...'; exit 1)  # Make sure setup_discourse_gems.rb ran correctly"
     }, {
         "type": "shell",
         "script": "nginx_install.sh"

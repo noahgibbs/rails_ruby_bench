@@ -15,9 +15,6 @@ VERBOSE = true
 base = LOCAL ? File.expand_path('..', __FILE__) : "/home/ubuntu"
 benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 
-DISCOURSE_GIT_URL    = benchmark_software["discourse"]["git_url"]
-DISCOURSE_TAG        = benchmark_software["discourse"]["git_tag"]
-
 class SystemPackerBuildError < RuntimeError; end
 
 print <<SETUP
@@ -49,14 +46,35 @@ else
 end
 DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 
+# Installing the Discourse gems takes awhile. Like, a *long*
+# while. And Packer turns out to have a bug where a step that takes
+# over five minutes can quietly fail without raising an error. So not
+# only do we touch the file (to make sure this worked), we also split
+# out installing Discourse's gems into its own step.
+
+first_ruby = nil
 # We can't easily match up the benchmark_software entries with Ruby names...
 Dir["#{ENV["HOME"]}/.rvm/rubies/*"].each do |ruby_name|
   ruby_name = ruby_name.split("/")[-1]
-  next if ["default", "ruby-2.3.1"].include?(ruby_name)  # Don't bother with the system Ruby or default
+  next if ["default", "ruby-2.4.1"].include?(ruby_name)  # Don't bother with the system Ruby or default
+  first_ruby ||= ruby_name  # What's the first comparison Ruby?
 
   puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
   Dir.chdir(DISCOURSE_DIR) do
     csystem "rvm use #{ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+  end
+end
+
+# And check to make sure the benchmark actually runs... But just do a few iterations.
+Dir.chdir(RAILS_BENCH_DIR) do
+  begin
+    csystem "rvm use #{first_ruby} && ./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1", "Couldn't successfully run the benchmark!", :bash => true
+  rescue SystemPackerBuildError
+    # Before dying, let's look at that Rails logfile... Redirect stdout to stderr.
+    print "Error running test iterations of the benchmark, printing Rails log to console!\n==========\n"
+    print `tail -60 work/discourse/log/profile.log`   # If we echo too many lines they just get cut off by Packer
+    print "=============\n"
+    raise # Re-raise the error, we still want to die.
   end
 end
 
