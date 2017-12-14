@@ -53,6 +53,9 @@ class DiscourseClient
       resp = RestClient::Request.execute args
     rescue RestClient::Found => e  # 302 redirect
       resp = e.response
+    rescue RestClient::Exception   # Any other RestClient failure
+      STDERR.puts "Got exception when #{method.to_s.upcase}ing #{url.inspect}..."
+      raise
     end
     @cookies = resp.cookies  # Maintain continuity of cookies
     resp
