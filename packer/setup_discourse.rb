@@ -67,10 +67,10 @@ DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
 
-# Install Discourse gems into RVM-standard Ruby 2.3.1 installed for Discourse
+# Install Discourse gems into RVM-standard Ruby installed for Discourse
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "gem install bundle", "Couldn't install bundler for #{DISCOURSE_DIR} for Discourse's Ruby 2.3.1!", :bash => true
-  csystem "bundle", "Couldn't install Discourse gems for #{DISCOURSE_DIR} for Discourse's Ruby 2.3.1!", :bash => true
+  csystem "gem install bundle", "Couldn't install bundler for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
+  csystem "bundle", "Couldn't install Discourse gems for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
 end
 
 if LOCAL
