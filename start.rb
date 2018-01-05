@@ -81,6 +81,20 @@ def csystem(cmd, err, opts = {})
   out
 end
 
+def last_pid
+  @started_pid
+end
+
+def get_server_rss
+  1024 * BigDecimal.new(`ps -o rss= -p#{@started_pid}`)
+end
+
+def get_server_gc_stats
+  # NOTE: This won't work until a version of Puma later than 3.9.1 (3.11.0 has it). So for now, don't use this.
+  output = `bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc-stats`
+  JSON.parse(output.chomp)
+end
+
 def server_start
   # Start the server
   @started_pid = fork do
@@ -182,7 +196,15 @@ request_times = nil
 worker_times = []
 warmup_times = []
 
+# Make sure these are in scope
+loaded_rss = nil
+final_rss = nil
+first_gc_stat = nil
+last_gc_stat = nil
+
 with_running_server do
+  loaded_rss = get_server_rss
+  #first_gc_stat = get_server_gc_stats
 
   # By randomizing all "real" actions before all warmups, we guarantee
   # that multiple runs with different numbers of warmups but the same
@@ -203,6 +225,8 @@ with_running_server do
   unless worker_iterations == 0
     worker_times = multithreaded_actions(worker_actions, workers, PORT_NUM)
   end
+  final_rss = get_server_rss
+  #last_gc_stat = get_server_gc_stats
 end # Stop the Rails server after all interactions have finished.
 
 # TODO: Fix these thread run times. process.rb was fixed, the just-to-console times weren't.
@@ -254,6 +278,12 @@ test_data = {
   },
   "requests" => {
     "times" => worker_times
+  },
+  "memory" => {
+    "loaded_rss" => loaded_rss,
+    "final_rss" => final_rss,
+    #"gc_stat_last" => last_gc_stat,
+    #"gc_stat_first" => first_gc_stat,
   },
 }
 
