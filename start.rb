@@ -86,12 +86,14 @@ def last_pid
 end
 
 def get_server_rss
+  # TODO: get all processes with the name "cluster worker <num>: <master pid> [discourse]"
   1024 * BigDecimal.new(`ps -o rss= -p#{@started_pid}`)
 end
 
 def get_server_gc_stats
   # NOTE: This won't work until a version of Puma later than 3.9.1 (3.11.0 has it). So for now, don't use this.
   output = `bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc-stats`
+  output.sub!(/^[^{]+/, "")
   JSON.parse(output.chomp)
 end
 
