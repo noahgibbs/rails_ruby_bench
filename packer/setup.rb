@@ -67,14 +67,15 @@ def clone_or_update_by_json(h, work_dir)
   clone_or_update_repo(h["git_url"], h["git_tag"], h["checkout_dir"] || work_dir)
 end
 
-def build_and_mount_ruby(source_dir, prefix_dir, mount_name)
+def build_and_mount_ruby(source_dir, prefix_dir, mount_name, options = {})
   puts "Build and mount Ruby: Source dir: #{source_dir.inspect} Prefix dir: #{prefix_dir.inspect} Mount name: #{mount_name.inspect}"
   Dir.chdir(source_dir) do
     unless File.exists?("configure")
       csystem "autoconf", "Couldn't run autoconf in #{source_dir}!"
     end
     unless File.exists?("Makefile")
-      csystem "./configure --prefix #{prefix_dir}", "Couldn't run configure in #{source_dir}!"
+      configure_options = options["configure_options"] || ""
+      csystem "./configure --prefix #{prefix_dir} #{configure_options}", "Couldn't run configure in #{source_dir}!"
     end
     csystem "make", "Make failed in #{source_dir}!"
     # This should install to the benchmark ruby dir
@@ -96,7 +97,7 @@ def clone_or_update_ruby_by_json(h, work_dir)
   mount_name = h["name"] || autogen_name
   prefix_dir = h["prefix_dir"] || File.join(RAILS_BENCH_DIR, "work", "prefix", mount_name.gsub("/", "_"))
 
-  build_and_mount_ruby(h["checkout_dir"], prefix_dir, mount_name)
+  build_and_mount_ruby(h["checkout_dir"], prefix_dir, mount_name, { "configure_options" => h["configure_options"] || "" } )
   h["mount_name"] = "ext-" + mount_name
 end
 

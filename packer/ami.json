@@ -80,6 +80,9 @@
         "inline": "[ -f /tmp/setup_discourse_gems_ran_correctly ] || (echo 'Setup_discourse.rb failed to run to completion...'; exit 1)  # Make sure setup_discourse_gems.rb ran correctly"
     }, {
         "type": "shell",
+        "script": "misc_install.sh"
+    }, {
+        "type": "shell",
         "script": "nginx_install.sh"
     }, {
 	"type": "file",
