@@ -45,10 +45,16 @@ INPUT_FILES.each do |f|
   # Assign a cohort to these samples
   cohort_parts = cohort_indices.map do |cohort_elt|
     raise "Unexpected file format for file #{f.inspect}!" unless d && d["settings"] && d["environment"]
-    item = d["settings"][cohort_elt] || d["environment"][cohort_elt]
+    item = nil
+    if d["settings"].has_key?(cohort_elt)
+      item = d["settings"][cohort_elt]
+    elsif d["environment"].has_key?(cohort_elt)
+      item = d["environment"][cohort_elt]
+    else
+      raise "Can't find setting or environment object #{cohort_elt}!"
+    end
     item
   end
-  raise "Can't find setting or environment object #{cohort_elt}!" if cohort_parts.any?(&:nil?)
   cohort = cohort_parts.join(",")
 
   # Update data format to latest version
