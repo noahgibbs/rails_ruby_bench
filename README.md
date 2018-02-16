@@ -12,18 +12,21 @@ Make sure to install the gems:
 
     $ bundle
 
+Note that Discourse (at least version 1.8) does not support Postgresql
+10, version 9 is needed.
+
 Then, get Discourse set up:
 
     $ cd work
     $ git clone https://github.com/discourse/discourse.git
     $ cd discourse
     $ bundle
-    $ rake db:create db:migrate  # If necessary, db:drop first
+    $ RAILS_ENV=profile rake db:create db:migrate  # If necessary, db:drop first
 
 Then, run the database seeding script:
 
     $ cd ../.. # Back to root directory rather than work/discourse
-    $ ruby seed_db_data.rb  # And wait awhile - it's slow
+    $ RAILS_ENV=profile ruby seed_db_data.rb  # And wait awhile - it's slow
 
 Now you can run the benchmark:
 
