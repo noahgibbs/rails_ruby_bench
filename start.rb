@@ -247,6 +247,11 @@ print "Mean thread run: #{worker_times_max.inject(0.0, &:+) / worker_times.size}
 print "Median thread run: #{worker_times_max.sort[ worker_times.size / 2 ] }\n"
 print "Raw times: #{worker_times.inspect}\n"
 
+env_vars = ENV.keys
+important_env_vars = env_vars.select { |name| name.downcase["ruby"] || name.downcase["gem"] } + [ "LD_PRELOAD" ]
+env_hash = {}
+important_env_vars.each { |var| env_hash["env-#{var}"] = ENV[var] }
+
 test_data = {
   "version" => 2,
   "settings" => {
@@ -271,7 +276,7 @@ test_data = {
     "rails_ruby_bench git status" => `git status`,
     "rails_ruby_bench git sha" => `git rev-parse HEAD`,
     "ec2 instance id" => `wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`,
-  },
+  }.merge(env_hash),
   "startup" => {
     "times" => startup_times
   },
