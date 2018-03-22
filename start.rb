@@ -6,6 +6,7 @@ require 'optparse'
 require 'rest-client'
 require 'json'
 require 'gabbler'  # Require this before requiring Rails' config/environment.rb, which will start Bundler.
+require 'get_process_mem'
 
 # Run this in "profile" environment for Discourse.
 ENV['RAILS_ENV'] = 'profile'
@@ -86,8 +87,20 @@ def last_pid
 end
 
 def get_server_rss
-  # TODO: get all processes with the name "cluster worker <num>: <master pid> [discourse]"
-  1024 * BigDecimal.new(`ps -o rss= -p#{@started_pid}`)
+  GetProcessMem.new(@started_pid).bytes
+end
+
+def get_puma_worker_rss
+  out = `ps -o pid=,rss=,command=`
+  rss = []
+  lines = out.split
+  lines.each do |line|
+    pid, rss, command = line.split("\t", 3)
+    if command =~ Regexp.new("cluster worker (\\d+): #{@started_pid} [discourse]")
+      offset = $1
+      rss.push([pid, rss, offset])
+    end
+  end
 end
 
 def get_server_gc_stats
@@ -205,7 +218,7 @@ first_gc_stat = nil
 last_gc_stat = nil
 
 with_running_server do
-  loaded_rss = get_server_rss
+  loaded_rss = GetProcessMem.new(last_pid).bytes
   #first_gc_stat = get_server_gc_stats
 
   # By randomizing all "real" actions before all warmups, we guarantee
@@ -227,7 +240,7 @@ with_running_server do
   unless worker_iterations == 0
     worker_times = multithreaded_actions(worker_actions, workers, PORT_NUM)
   end
-  final_rss = get_server_rss
+  final_rss = GetProcessMem.new(last_pid).bytes
   #last_gc_stat = get_server_gc_stats
 end # Stop the Rails server after all interactions have finished.
 
@@ -287,8 +300,10 @@ test_data = {
     "times" => worker_times
   },
   "memory" => {
-    "loaded_rss" => loaded_rss,
-    "final_rss" => final_rss,
+    "master_puma_process" => {
+      "loaded_rss" => loaded_rss,
+      "final_rss" => final_rss,
+    }
     #"gc_stat_last" => last_gc_stat,
     #"gc_stat_first" => first_gc_stat,
   },

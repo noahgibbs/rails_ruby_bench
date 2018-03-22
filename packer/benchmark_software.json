@@ -9,14 +9,19 @@
   },
   "compare_rubies": [
       {
-          "name": "mri-2.3.4",
+          "name": "mri-2.5.0",
           "git_url": "git://github.com/ruby/ruby.git",
-          "git_tag": "v2_3_4"
+          "git_tag": "v2_5_0"
       },
       {
-          "name": "mri-2.4.1",
+          "name": "mri-2.6.0-preview",
           "git_url": "git://github.com/ruby/ruby.git",
-          "git_tag": "v2_4_1"
+          "git_tag": "v2_6_0_preview1"
+      },
+      {
+          "name": "mri-head-march-23",
+          "git_url": "git://github.com/ruby/ruby.git",
+          "git_tag": "631272ff1587a7a76f75593ec5964493222ca50c"
       }
   ]
 }
