@@ -22,6 +22,7 @@ out_dir = "."
 out_file = nil
 puma_processes = 10
 puma_threads = 6
+no_warm_start = false
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby start.rb [options]"
@@ -54,6 +55,9 @@ OptionParser.new do |opts|
   end
   opts.on("-c", "--cluster-processes NUMBER", "number of Puma processes in cluster mode") do |c|
     puma_processes = c.to_i
+  end
+  opts.on("-a", "--no-warm-start", "Do not do the normal automatic start/stop warmup iteration") do
+    no_warm_start = true
   end
 end.parse!
 
@@ -200,9 +204,11 @@ Signal.trap("HUP") do
   print "Ignoring SIGHUP...\n"
 end
 
-# One Burn-in Iteration
-print "Starting and stopping server to preload caches...\n"
-full_iteration_start_stop
+# One Burn-in Start/Stop Iteration
+unless no_warm_start
+  print "Starting and stopping server to preload caches...\n"
+  full_iteration_start_stop
+end
 
 print "Running start-time benchmarks for #{startup_iters} iterations...\n"
 startup_times = (1..startup_iters).map { full_iteration_start_stop }
