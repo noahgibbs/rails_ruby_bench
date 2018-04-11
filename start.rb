@@ -16,7 +16,10 @@ startup_iters = 2
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
 worker_iterations = 1500  # All iterations, spread between load-test worker threads
 warmup_iterations = 300  # Need to test warmup iterations properly...
+total_restart_iterations = 1  # This is essentially a second (or more) iteration of nearly everything. 6000 iterations with 10 total restarts
+                              # gives 60,000 iterations. Warmup and startup iterations are also repeated. The "bonus" warm start is not.
 workers = 30
+worker_processes = 1
 port_num = 4567
 out_dir = "."
 out_file = nil
@@ -32,8 +35,14 @@ OptionParser.new do |opts|
   opts.on("-i", "--iterations NUMBER", "number of iterations per user simulator") do |n|
     worker_iterations = n.to_i
   end
-  opts.on("-n", "--num-workers NUMBER", "number of user simulator worker threads") do |n|
+  opts.on("-t", "--total-restart-iterations NUMBER", "number of total repetitions of all non-warmup iterations without shutdown") do |n|
+    total_restart_iterations = n.to_i
+  end
+  opts.on("-n", "--num-workers NUMBER", "number of user simulator worker threads per process") do |n|
     workers = n.to_i
+  end
+  opts.on("-l", "--num-load-processes NUMBER", "number of user simulator work processes") do |n|
+    worker_processes = n.to_i
   end
   opts.on("-s", "--num-startup-iters NUMBER", "number of startup/shutdown iterations") do |n|
     startup_iters = n.to_i
@@ -120,7 +129,7 @@ def server_start
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
     Dir.chdir "work/discourse"
     # Start Puma in a new process group to easily kill subprocesses if necessary
-    exec({ "RAILS_ENV" => "profile" }, "bundle", "exec", "puma", "--control", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "1:#{PUMA_THREADS}", :pgroup => true)
+    exec({ "RAILS_ENV" => "profile" }, "bundle", "exec", "puma", "--config", "config/puma.rb", "--control", "tcp://127.0.0.1:#{CONTROL_PORT}", "--control-token", CONTROL_TOKEN, "-p", PORT_NUM.to_s, "-w", PUMA_PROCESSES.to_s, "-t", "1:#{PUMA_THREADS}", :pgroup => true)
   end
 end
 
@@ -143,6 +152,32 @@ def server_stop
 rescue Errno::ECHILD
   # Found no child processes... Which means that whatever we're attempting to wait for, it's already dead.
   print "No child processes, moving on with our day.\n"
+end
+
+def with_num_processes(num_processes)
+  if num_processes == 1
+    yield
+    return
+  end
+  m = Mutex.new
+  processes = []
+  num_processes.times do
+    started_pid = fork do
+      yield
+      exit!
+    end
+    processes.push(started_pid)
+  end
+  until processes.empty?
+    begin
+      dead_pid = Process.waitpid
+      STDERR.puts "Finished process with pid #{dead_pid.inspect}"
+      processes -= [ dead_pid ]
+    rescue Errno::ECHILD
+      STDERR.puts "ECHILD while waiting for child processes! I don't think this should happen..."
+      raise
+    end
+  end
 end
 
 def single_run_benchmark_output_and_time
@@ -210,10 +245,6 @@ unless no_warm_start
   full_iteration_start_stop
 end
 
-print "Running start-time benchmarks for #{startup_iters} iterations...\n"
-startup_times = (1..startup_iters).map { full_iteration_start_stop }
-request_times = nil
-
 worker_times = []
 warmup_times = []
 
@@ -222,6 +253,10 @@ loaded_rss = nil
 final_rss = nil
 first_gc_stat = nil
 last_gc_stat = nil
+
+print "Running start-time benchmarks for #{startup_iters} iterations...\n"
+startup_times = (1..startup_iters).map { full_iteration_start_stop }
+request_times = nil
 
 with_running_server do
   loaded_rss = GetProcessMem.new(last_pid).bytes
@@ -239,12 +274,12 @@ with_running_server do
   # First, warmup iterations.
   print "Warmup iterations: #{warmup_iterations}\n"
   unless warmup_iterations == 0
-    warmup_times = multithreaded_actions(warmup_actions, workers, PORT_NUM)
+    warmup_times = with_num_processes(worker_processes) { multithreaded_actions(warmup_actions, workers, PORT_NUM) }
   end
   # Second, real iterations.
   print "Benchmark iterations: #{worker_iterations}\n"
   unless worker_iterations == 0
-    worker_times = multithreaded_actions(worker_actions, workers, PORT_NUM)
+    worker_times = with_num_processes(worker_processes) { multithreaded_actions(worker_actions, workers, PORT_NUM) }
   end
   final_rss = GetProcessMem.new(last_pid).bytes
   #last_gc_stat = get_server_gc_stats
@@ -272,18 +307,21 @@ env_hash = {}
 important_env_vars.each { |var| env_hash["env-#{var}"] = ENV[var] }
 
 test_data = {
-  "version" => 2,
+  "version" => 3,   # Last breaking revision: added total restart iterations, so number of data points may not match worker_iterations.
   "settings" => {
     "startup_iters" => startup_iters,
     "random_seed" => random_seed,
     "worker_iterations" => worker_iterations,
     "warmup_iterations" => warmup_iterations,
+    "total_restart_iterations" => total_restart_iterations,
     "workers" => workers,
+    "worker_processes" => worker_processes,
     "puma_processes" => puma_processes,
     "puma_threads" => puma_threads,
     "port_num" => port_num,
     "out_dir" => out_dir,
     "out_file" => out_file || false,
+    "no_warm_start" => no_warm_start,
     "discourse_revision" => `cd work/discourse && git rev-parse HEAD`.chomp,
   },
   "environment" => {
