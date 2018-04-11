@@ -70,7 +70,7 @@ INPUT_FILES.each do |f|
     end
     runs = d["requests"]["times"].map { |thread_times| thread_times[-1] }
     raise "Error with request times! #{d["requests"]["times"].inspect}" if runs.nil? || runs.any?(:nil?)
-  elsif d["version"] == 2
+  elsif [2,3].include?(d["version"])
     times = d["requests"]["times"].flatten(1)
     runs = d["requests"]["times"].map { |thread_times| thread_times.inject(0.0, &:+) }
   else
