@@ -156,14 +156,16 @@ end
 
 def with_num_processes(num_processes)
   if num_processes == 1
-    yield
-    return
+    val = yield
+    return val
   end
   m = Mutex.new
+  result = []
   processes = []
   num_processes.times do
     started_pid = fork do
-      yield
+      val = yield
+      m.synchronize { result.concat(val) }
       exit!
     end
     processes.push(started_pid)
@@ -178,6 +180,7 @@ def with_num_processes(num_processes)
       raise
     end
   end
+  result
 end
 
 def single_run_benchmark_output_and_time
@@ -333,6 +336,7 @@ test_data = {
     "rails_ruby_bench git status" => `git status`,
     "rails_ruby_bench git sha" => `git rev-parse HEAD`,
     "ec2 instance id" => `wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`,
+    "ec2 instance type" => `wget -q -O - http://169.254.169.254/latest/meta-data/instance-type`,
   }.merge(env_hash),
   "startup" => {
     "times" => startup_times
