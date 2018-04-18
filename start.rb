@@ -154,22 +154,45 @@ rescue Errno::ECHILD
   print "No child processes, moving on with our day.\n"
 end
 
-def with_num_processes(num_processes)
+# Run the block in N processes. The array result in each process will
+# be serialized as JSON, then passed back as a string and concatenated
+# in the parent process.
+def jsonable_with_num_processes(num_processes)
+  # Only one process? Great, skip all the hard parts.
   if num_processes == 1
     val = yield
     return val
   end
-  m = Mutex.new
-  result = []
+
+  # Open N processes, with N pipes to and from them.
   processes = []
+  pipes = []
   num_processes.times do
+    pipe_out, pipe_in = IO.pipe
+
+    # Inside each process, run the block, print the result and exit.
     started_pid = fork do
+      pipe_out.close
       val = yield
-      m.synchronize { result.concat(val) }
+      pipe_in.write(JSON.dump val)
       exit!
     end
+    pipe_in.close
     processes.push(started_pid)
+    pipes.push(pipe_out)
   end
+
+  # Now we get all the output.
+  result = []
+  pipes.each do |pipe|
+    chunk = pipe.read
+    next if chunk == ""  # Looks like we're done...
+    next if !chunk       # Returned false, try next pipe
+    data = JSON.parse(chunk)
+    result.concat(data)
+  end
+
+  # Okay, now clear out all the dead process IDs. Unix won't let them die until they're explicitly waited for.
   until processes.empty?
     begin
       dead_pid = Process.waitpid
@@ -277,12 +300,12 @@ with_running_server do
   # First, warmup iterations.
   print "Warmup iterations: #{warmup_iterations}\n"
   unless warmup_iterations == 0
-    warmup_times = with_num_processes(worker_processes) { multithreaded_actions(warmup_actions, workers, PORT_NUM) }
+    warmup_times = jsonable_with_num_processes(worker_processes) { multithreaded_actions(warmup_actions, workers, PORT_NUM) }
   end
   # Second, real iterations.
   print "Benchmark iterations: #{worker_iterations}\n"
   unless worker_iterations == 0
-    worker_times = with_num_processes(worker_processes) { multithreaded_actions(worker_actions, workers, PORT_NUM) }
+    worker_times = jsonable_with_num_processes(worker_processes) { multithreaded_actions(worker_actions, workers, PORT_NUM) }
   end
   final_rss = GetProcessMem.new(last_pid).bytes
   #last_gc_stat = get_server_gc_stats
