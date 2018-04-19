@@ -144,7 +144,7 @@ def server_stop
   loop do
     # Verify that server we started is sufficiently dead before we restart
     STDERR.print "Waiting for dead PID expecting #{@started_pid.inspect}\n"
-    dead_pid = Process.waitpid
+    dead_pid = Process.waitpid(0)
     STDERR.print "Got dead pid: #{dead_pid.inspect}\n"
     break if dead_pid == @started_pid
   end
@@ -154,16 +154,17 @@ rescue Errno::ECHILD
   print "No child processes, moving on with our day.\n"
 end
 
-# Run the block in N processes. The array result in each process will
-# be serialized as JSON, then passed back as a string and concatenated
-# in the parent process.
-def jsonable_with_num_processes(num_processes)
-  # Only one process? Great, skip all the hard parts.
-  if num_processes == 1
-    val = yield
-    return val
+def read_all_from_pipe(pipe)
+  out = ""
+  loop do
+    chunk = pipe.read
+    return out if chunk == "" || !chunk
+    out += chunk
   end
+  raise "You really shouldn't be able to break out of that loop..."
+end
 
+def coordinator_main_body(num_processes, top_pipe)
   # Open N processes, with N pipes to and from them.
   processes = []
   pipes = []
@@ -185,25 +186,72 @@ def jsonable_with_num_processes(num_processes)
   # Now we get all the output.
   result = []
   pipes.each do |pipe|
-    chunk = pipe.read
-    next if chunk == ""  # Looks like we're done...
-    next if !chunk       # Returned false, try next pipe
-    data = JSON.parse(chunk)
+    out = read_all_from_pipe(pipe)
+    data = JSON.parse(out)
     result.concat(data)
+    pipe.close
   end
 
   # Okay, now clear out all the dead process IDs. Unix won't let them die until they're explicitly waited for.
   until processes.empty?
     begin
-      dead_pid = Process.waitpid
-      STDERR.puts "Finished process with pid #{dead_pid.inspect}"
+      dead_pid = Process.waitpid(0)
       processes -= [ dead_pid ]
+      STDERR.puts "Finished process with pid #{dead_pid.inspect}, waiting for #{processes.inspect}"
     rescue Errno::ECHILD
       STDERR.puts "ECHILD while waiting for child processes! I don't think this should happen..."
       raise
     end
   end
+
   result
+end
+
+# Run the block in N processes. The array result in each process will
+# be serialized as JSON, then passed back as a string and concatenated
+# in the parent process.
+def jsonable_with_num_processes(num_processes)
+  # Only one process? Great, skip all the hard parts.
+  if num_processes == 1
+    val = yield
+    return val
+  end
+
+  # Okay, this is to talk to a coordinator process...
+  coordinator_pipe_out, coordinator_pipe_in = IO.pipe
+
+  # Okay, first open a "coordinator" process with its own process
+  # group ID (pgid).  Then we can do cleanup with a "kill -9" type
+  # solution and get the whole process subtree without killing
+  # ourself.
+  coordinator_pid = fork do
+    coordinator_pipe_out.close # For parent use, not coordinator use
+    pgid = Process.pid  # Get child's own pid
+    Process.setpgid(pgid)  # Detach into new process group
+
+    combined_output = coordinator_main_body(num_processes, coordinator_pipe_in)
+    coordinator_pipe_in.write(JSON.dump combined_output)
+    sleep 0.01
+    exit!
+  end
+
+  coordinator_pipe_in.close # For coordinator use, not parent use
+  json_result = read_all_from_pipe coordinator_pipe_out
+
+  # Now that we have all output from the coordinator, we'll kill it
+  # along with all child processes... First "friendly" kill, then "no
+  # really, go away"
+  Process.kill(coordinator_pid, "-HUP")
+  sleep 0.1
+  Process.kill(coordinator_pid, -9)
+
+  # Ordinarily the coordinator shouldn't return its data until all
+  # child processes have completed and waited for. So we shouldn't get
+  # zombie processes unless there's an error, which should (I hope)
+  # kill this process too...
+  Process.waitpid(coordinator_pid)
+
+  JSON.parse json_result
 end
 
 def single_run_benchmark_output_and_time
