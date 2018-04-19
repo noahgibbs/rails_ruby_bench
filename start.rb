@@ -210,7 +210,7 @@ end
 # Run the block in N processes. The array result in each process will
 # be serialized as JSON, then passed back as a string and concatenated
 # in the parent process.
-def jsonable_with_num_processes(num_processes)
+def jsonable_with_num_processes(num_processes, &block)
   # Only one process? Great, skip all the hard parts.
   if num_processes == 1
     val = yield
@@ -227,9 +227,9 @@ def jsonable_with_num_processes(num_processes)
   coordinator_pid = fork do
     coordinator_pipe_out.close # For parent use, not coordinator use
     pgid = Process.pid  # Get child's own pid
-    Process.setpgid(pgid)  # Detach into new process group
+    Process.setpgid(pgid, pgid)  # Detach into new process group
 
-    combined_output = coordinator_main_body(num_processes, coordinator_pipe_in)
+    combined_output = coordinator_main_body(num_processes, coordinator_pipe_in, &block)
     coordinator_pipe_in.write(JSON.dump combined_output)
     sleep 0.01
     exit!
@@ -241,9 +241,9 @@ def jsonable_with_num_processes(num_processes)
   # Now that we have all output from the coordinator, we'll kill it
   # along with all child processes... First "friendly" kill, then "no
   # really, go away"
-  Process.kill(coordinator_pid, "-HUP")
+  Process.kill("-HUP", coordinator_pid)
   sleep 0.1
-  Process.kill(coordinator_pid, -9)
+  Process.kill(-9, coordinator_pid)
 
   # Ordinarily the coordinator shouldn't return its data until all
   # child processes have completed and waited for. So we shouldn't get
