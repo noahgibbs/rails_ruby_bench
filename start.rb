@@ -168,11 +168,12 @@ def coordinator_main_body(num_processes, top_pipe)
   # Open N processes, with N pipes to and from them.
   processes = []
   pipes = []
-  num_processes.times do
+  num_processes.times do |worker_num|
     pipe_out, pipe_in = IO.pipe
 
     # Inside each process, run the block, print the result and exit.
     started_pid = fork do
+      $0 += "(WORKER #{worker_num + 1})"
       pipe_out.close
       val = yield
       pipe_in.write(JSON.dump val)
@@ -230,6 +231,7 @@ def jsonable_with_num_processes(num_processes, &block)
     Process.setpgid(pgid, pgid)  # Detach into new process group
 
     combined_output = coordinator_main_body(num_processes, coordinator_pipe_in, &block)
+    $0 += " (COORDINATOR)"
     coordinator_pipe_in.write(JSON.dump combined_output)
     sleep 0.01
     exit!
