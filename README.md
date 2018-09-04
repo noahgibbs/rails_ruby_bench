@@ -1,12 +1,30 @@
-This is an initial attempt at a Rails benchmark for Ruby. The intent
-is that it will be reviewed by members of the Ruby core team and
-others and eventually be the basis for an optcarrot-style Ruby
-benchmark for Rails applications.
+# Rails Ruby Bench
 
-This benchmark steals some code from Discourse
+Rails Ruby Bench (aka RRB) is a Discourse-based benchmark to measure
+the speed of the Ruby language. It can incidentally be used to measure
+the speed of a number of other things.
+
+RRB is a "Real World" benchmark, in the sense of running a large Rails
+app in a concurrent configuration with a lot of complexity and
+variation in what it does. That makes it wonderful for measuring
+end-to-end effects of significant changes, and terrible for optimizing
+operations that don't take a lot of runtime.
+
+This Discourse-based benchmark steals some code from Discourse
 (e.g. user\_simulator.rb, seed\_db\_data.rb), so it's licensed GPLv2.
 
-## Running the Benchmark Locally (Easy Version)
+I normally run this benchmark by building an AWS image using Packer
+and running it on a dedicated EC2 instance. For a variety of reasons,
+that gives very consistent benchmark results. It's also annoying for
+some use cases. If you can easily use AWS, I recommend it. For local
+configuration, keep reading.
+
+## Running the Benchmark Locally (Incomplete Version)
+
+If you think your computer is basically set up for Discourse already,
+here's the short version of the configuration. Are you worried that
+you may need more software? Scroll down to the complete version of the
+setup below.
 
 Make sure to install the gems:
 
@@ -48,17 +66,34 @@ Start.rb supports a number of options:
 
 ## Running the Benchmark Locally (Complete Version)
 
-First, run the setup from the root of this repo:
+For the AWS build, RRB uses Packer to create an image configured for
+Discourse, 100% from scratch. That means the Packer directory includes
+all the necessary configuration scripts to make that happen.
+
+For very good reasons, RRB's Packer build separates these scripts into
+a lot of small steps. So the configuration is annoying :-(
+
+If you want to be 100% sure you have all the latest configuration
+steps, read packer/ami.json - that's the configuration file that
+Packer actually uses to build the image, so it's basically guaranteed
+to work. It runs a lot of other small scripts which are stored in the
+packer directory. If you have trouble with these instructions, you may
+want to refer to the runnable script.
+
+RRB tries to keep an up-to-date local install script, but it *does*
+sometimes get out of date:
 
 ```bash
 Switch to a 2.3.4 or 2.4.1 Ruby
 $ ruby packer/setup.rb --local
 ```
 
-You will also need to install Discourse dependencies.
-There's a script in the Discourse directory to do it on OS X under
-work/discourse/script/osx_dev.
-Refer to [this page](https://github.com/discourse/discourse/blob/v1.8.0.beta13/docs/DEVELOPER-ADVANCED.md#preparing-a-fresh-ubuntu-install) for Linux.
+You'll also need Discourse's dependencies - the benchmark uses
+Discourse, so you'll need to manage a local copy of Discourse.
+There's a script in the Discourse directory you can look at on OS X
+under work/discourse/script/osx_dev.  Refer to
+[this page](https://github.com/discourse/discourse/blob/v1.8.0.beta13/docs/DEVELOPER-ADVANCED.md#preparing-a-fresh-ubuntu-install)
+for Linux.
 
 Rerun the setup until it succeeds.
 
@@ -104,7 +139,13 @@ Example command lines:
     cd rails_ruby_bench
     ./in_each_ruby.rb "for i in {1..20}; do ./start.rb -i 3000 -w 100 -s 0; done"
 
-You'll need to find the public DNS name of the VM you created somehow. I normally use the EC2 dashboard. Similarly, you should use an SSH key name that exists in your AWS account. The parameters above are for an m4.2xlarge dedicated instance. That's expensive as AWS goes, but will also give you reproducible results that you can compare directly with mine. If you use a much smaller instance, you'll want to reduce the number of load-testing threads and Puma processes and threads.
+You'll need to find the public DNS name of the VM you created
+somehow. I normally use the EC2 dashboard. Similarly, you should use
+an SSH key name that exists in your AWS account. The parameters above
+are for an m4.2xlarge dedicated instance. That's a bit expensive, but
+will also give you reproducible results that you can compare directly
+with mine. If you use a much smaller instance, you'll want to reduce
+the number of load-testing threads and Puma processes and threads.
 
 I normally copy the JSON files back to my own machine, something like:
 
@@ -112,20 +153,23 @@ I normally copy the JSON files back to my own machine, something like:
 
 ## Debugging and AWS
 
-If you'd like to change the behavior of the AWS image, you can use AWS
-user data to run a script on boot. See
-"http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html".
-
 By default, the Rails benchmark is git-cloned under
 ~ubuntu/rails\_ruby\_bench, and Discourse is cloned under the work
 subdirectory of that repository. The built Rubies are mounted using
-rvm for the benchmark. If you want to change anything when starting
-your own instance, those are great places to begin.
+rvm for the benchmark. You can see them with "rvm list". If you want
+to change anything when starting your own instance, those are great
+places to begin.
 
 By default, the image won't update or rebuild Ruby or Discourse, nor
 update the Rails Ruby benchmark on boot. It will use the versions of
 all of those things that were current when the AMI was built. But you
 can modify your own image later however you like.
+
+If you'd like to change the behavior of the AWS image, you can use AWS
+user data to run a script on boot. See
+"http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html".
+
+You can also just log in and make whatever changes you want, of course.
 
 ## Decisions and Intent
 
