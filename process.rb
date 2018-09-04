@@ -40,7 +40,11 @@ process_output = {
 }
 
 INPUT_FILES.each do |f|
-  d = JSON.load File.read(f)
+  begin
+    d = JSON.load File.read(f)
+  rescue JSON::ParserError
+    raise "Error parsing JSON in file: #{f.inspect}"
+  end
 
   # Assign a cohort to these samples
   cohort_parts = cohort_indices.map do |cohort_elt|
