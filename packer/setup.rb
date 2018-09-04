@@ -17,7 +17,7 @@ benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
 RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
 
-DISCOURSE_DIR = ENV["DISCOURSE_DIR"] || File.join(__dir__, "work", "discourse")
+DISCOURSE_DIR = ENV["DISCOURSE_DIR"] || File.join(base, "..", "work", "discourse")
 DISCOURSE_URL = ENV["DISCOURSE_URL"] || benchmark_software["discourse"]["git_url"]
 DISCOURSE_TAG = ENV["DISCOURSE_TAG"] || benchmark_software["discourse"]["git_tag"]
 
@@ -153,10 +153,14 @@ if BUILD_RUBY
 end
 
 clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
+Dir.chdir(DISCOURSE_DIR) { csystem "bundle", "Couldn't install Discourse gems!", :bash => true }
 
-Dir.chdir(RAILS_BENCH_DIR) do
-  puts "Adding seed data..."
-  csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
+if LOCAL
+  Dir.chdir(RAILS_BENCH_DIR) do
+    # If there are already users added, this should exit without error and not change the database
+    puts "Adding seed data..."
+    csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
+  end
 end
 
 FileUtils.touch "/tmp/setup_ran_correctly"
