@@ -17,6 +17,10 @@ benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
 RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
 
+DISCOURSE_DIR = ENV["DISCOURSE_DIR"] || File.join(__dir__, "work", "discourse")
+DISCOURSE_URL = ENV["DISCOURSE_URL"] || benchmark_software["discourse"]["git_url"]
+DISCOURSE_TAG = ENV["DISCOURSE_TAG"] || benchmark_software["discourse"]["git_tag"]
+
 class SystemPackerBuildError < RuntimeError; end
 
 print <<SETUP
@@ -147,6 +151,8 @@ if BUILD_RUBY
     f.print rubies.join("\n")
   end
 end
+
+clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
 
 Dir.chdir(RAILS_BENCH_DIR) do
   puts "Adding seed data..."
