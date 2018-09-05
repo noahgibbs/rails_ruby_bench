@@ -153,9 +153,9 @@ if BUILD_RUBY
 end
 
 clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
-Dir.chdir(DISCOURSE_DIR) { csystem "bundle", "Couldn't install Discourse gems!", :bash => true }
 
 if LOCAL
+  Dir.chdir(DISCOURSE_DIR) { csystem "bundle", "Couldn't install Discourse gems!", :bash => true }
   Dir.chdir(RAILS_BENCH_DIR) do
     # If there are already users added, this should exit without error and not change the database
     puts "Adding seed data..."
