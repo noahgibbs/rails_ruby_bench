@@ -18,5 +18,5 @@ RUN cd /var/rails_ruby_bench && sudo -H -u discourse bundle install --deployment
 ADD benchmark_software.json /tmp/benchmark_software.json
 
 ADD build_benchmark_software.rb /tmp/build_benchmark_software.rb
-RUN sudo -H -u discourse /tmp/build_benchmark_software.rb
+RUN chmod +x /tmp/build_benchmark_software.rb && sudo -H -u discourse /tmp/build_benchmark_software.rb
 

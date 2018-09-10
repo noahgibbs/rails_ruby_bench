@@ -3,13 +3,10 @@
 require "fileutils"
 require "json"
 
-# Whether to build rubies with rvm
-BUILD_RUBY = !LOCAL
-USE_BASH = BUILD_RUBY
 # Print all commands and show their full output
 VERBOSE = true
 
-File.mkdir "/var/rubies"
+Dir.mkdir "/var/rubies"
 benchmark_software = JSON.load(File.read("/tmp/benchmark_software.json"))
 
 DISCOURSE_DIR = "/var/discourse"
@@ -19,7 +16,7 @@ class SystemPackerBuildError < RuntimeError; end
 
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
-  cmd = "bash -l -c \"#{cmd}\"" if USE_BASH && opts[:bash]
+  cmd = "bash -l -c \"#{cmd}\"" if opts[:bash]
   print "Running command: #{cmd.inspect}\n" if VERBOSE || opts[:debug] || opts["debug"]
   if VERBOSE
     system(cmd, out: $stdout, err: :out)
