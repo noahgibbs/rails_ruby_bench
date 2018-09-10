@@ -10,6 +10,9 @@ RUN echo 2.0.`date +%Y%m%d` > /RRB_VERSION
 
 RUN chown discourse:discourse /var
 
+# Additional packages to compile Rubies
+RUN apt-get install -y bison
+
 # Clone Rails Ruby Bench
 RUN sudo -H -u discourse git clone ${RRB_GIT_URL} /var/rails_ruby_bench
 #RUN cd /var/rails_ruby_bench && sudo -H -u discourse bundle install --deployment

@@ -10,8 +10,8 @@ echo 'export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profil
 echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
 . ~/.bash_profile
 
-# Remove once this is working
-curl -fsSL https://github.com/rbenv/rbenv-installer/raw/master/bin/rbenv-doctor | bash
+# rbenv-doctor script: Remove once this is working
+#curl -fsSL https://github.com/rbenv/rbenv-installer/raw/master/bin/rbenv-doctor | bash
 
 # Install ruby-build
 mkdir -p "$(rbenv root)"/plugins

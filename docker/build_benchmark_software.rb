@@ -65,7 +65,7 @@ def build_and_mount_ruby(source_dir, prefix_dir, mount_name, options = {})
     # This should install to the benchmark ruby dir
     csystem "make install", "Installing Ruby failed in #{source_dir}!"
   end
-  csystem "ln -s ~/.rbenv/versions/#{mount_name} #{source_dir}", "Couldn't mount #{source_dir.inspect} as #{mount_name}!", :bash => true
+  csystem "ln -s #{source_dir} ~/.rbenv/versions/#{mount_name}", "Couldn't mount #{source_dir.inspect} as #{mount_name}!", :bash => true
 end
 
 def autogen_name
@@ -81,7 +81,7 @@ def clone_or_update_ruby_by_json(h, work_dir)
   prefix_dir = h["prefix_dir"] || File.join(RAILS_BENCH_DIR, "work", "prefix", mount_name.gsub("/", "_"))
 
   build_and_mount_ruby(h["checkout_dir"], prefix_dir, mount_name, { "configure_options" => h["configure_options"] || "" } )
-  h["mount_name"] = "ext-" + mount_name
+  h["mount_name"] = mount_name
 end
 
 benchmark_software["compare_rubies"].each do |ruby_hash|
