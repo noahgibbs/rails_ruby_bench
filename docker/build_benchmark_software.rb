@@ -9,7 +9,7 @@ VERBOSE = true
 Dir.mkdir "/var/rubies"
 benchmark_software = JSON.load(File.read("/tmp/benchmark_software.json"))
 
-DISCOURSE_DIR = "/var/discourse"
+DISCOURSE_DIR = "/var/www/discourse"
 RAILS_BENCH_DIR = "/var/rails_ruby_bench"
 
 class SystemPackerBuildError < RuntimeError; end
@@ -78,12 +78,13 @@ end
 def clone_or_update_ruby_by_json(h, work_dir)
   clone_or_update_by_json(h, work_dir)
   mount_name = h["name"] || autogen_name
-  prefix_dir = h["prefix_dir"] || File.join(RAILS_BENCH_DIR, "work", "prefix", mount_name.gsub("/", "_"))
+  prefix_dir = h["prefix_dir"] || "/home/discourse/.rbenv/versions/#{mount_name.gsub("/", "_")}"
 
   build_and_mount_ruby(h["checkout_dir"], prefix_dir, mount_name, { "configure_options" => h["configure_options"] || "" } )
   h["mount_name"] = mount_name
 end
 
+# Build and mount each Ruby and install all gems
 benchmark_software["compare_rubies"].each do |ruby_hash|
   puts "Installing Ruby: #{ruby_hash.inspect}"
   # Clone the Ruby, then build and mount if necessary
@@ -93,10 +94,10 @@ benchmark_software["compare_rubies"].each do |ruby_hash|
     clone_or_update_ruby_by_json(ruby_hash, work_dir)
   end
 
-  puts "Mount the built Ruby: #{ruby_hash.inspect}"
+  puts "Mounted the built Ruby: #{ruby_hash.inspect}"
 
   mount_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
-  csystem "rbenv shell #{mount_ruby_name} && gem install bundler", "Couldn't install bundler for Ruby #{mount_ruby_name.inspect}!", :bash => true
+  csystem "rbenv shell #{mount_ruby_name} && gem install bundler mailcatcher", "Couldn't install bundler and/or mailcatcher for Ruby #{mount_ruby_name.inspect}!", :bash => true
 
   Dir.chdir(RAILS_BENCH_DIR) do
     csystem "rbenv shell #{mount_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{mount_ruby_name.inspect}!", :bash => true
@@ -113,16 +114,9 @@ File.open("/var/benchmark_ruby_versions.txt", "w") do |f|
   f.print rubies.join("\n")
 end
 
-csystem("gem install mailcatcher", "Couldn't install mailcatcher gem!", :bash => true)
-
 Dir.chdir(DISCOURSE_DIR) do
   csystem("RAILS_ENV=profile rake db:create db:migrate", "Couldn't create Discourse database!", :bash => true)
   unless File.exists?("public/assets")
     csystem("RAILS_ENV=profile bundle exec rake assets:precompile", "Failed to precompile Discourse assets!", :bash => true)
   end
 end
-
-# TODO: increase database.yml pool from 5 to 30+
-# TODO(maybe): add initializer to add jquery_include.js to assets.precompile?
-# TODO(maybe): disable CSRF protection
-# TODO(maybe): brief benchmark run to make sure it works

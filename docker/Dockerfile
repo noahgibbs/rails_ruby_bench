@@ -11,11 +11,13 @@ RUN echo 2.0.`date +%Y%m%d` > /RRB_VERSION
 RUN chown discourse:discourse /var
 
 # Additional packages to compile Rubies
-RUN apt-get install -y bison
+RUN apt-get install -y bison autoconf build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm-dev
+
+# Additional SQLite3 package, mostly for Mailcatcher gem
+RUN apt-get install -y libsqlite3-dev
 
 # Clone Rails Ruby Bench
 RUN sudo -H -u discourse git clone ${RRB_GIT_URL} /var/rails_ruby_bench
-#RUN cd /var/rails_ruby_bench && sudo -H -u discourse bundle install --deployment
 
 # Install RRB gems into system Ruby
 RUN cd /var/rails_ruby_bench && bundle
