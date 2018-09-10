@@ -65,8 +65,7 @@ def build_and_mount_ruby(source_dir, prefix_dir, mount_name, options = {})
     # This should install to the benchmark ruby dir
     csystem "make install", "Installing Ruby failed in #{source_dir}!"
   end
-  csystem "rvm mount #{prefix_dir} -n #{mount_name}", "Couldn't mount #{source_dir.inspect} as #{mount_name}!", :bash => true
-  csystem "rvm use --default ext-#{mount_name}", "Couldn't set ext-#{mount_name} to rvm default!", :bash => true
+  csystem "ln -s ~/.rbenv/versions/#{mount_name} #{source_dir}", "Couldn't mount #{source_dir.inspect} as #{mount_name}!", :bash => true
 end
 
 def autogen_name
@@ -85,11 +84,6 @@ def clone_or_update_ruby_by_json(h, work_dir)
   h["mount_name"] = "ext-" + mount_name
 end
 
-# Install Rails Ruby Bench gems into system Ruby
-Dir.chdir(RAILS_BENCH_DIR) do
-  csystem "gem install bundler && bundle", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
-end
-
 benchmark_software["compare_rubies"].each do |ruby_hash|
   puts "Installing Ruby: #{ruby_hash.inspect}"
   # Clone the Ruby, then build and mount if necessary
@@ -101,12 +95,16 @@ benchmark_software["compare_rubies"].each do |ruby_hash|
 
   puts "Mount the built Ruby: #{ruby_hash.inspect}"
 
-  rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
+  mount_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
+  csystem "rbenv shell #{mount_ruby_name} && gem install bundler", "Couldn't install bundler for Ruby #{mount_ruby_name.inspect}!", :bash => true
+
   Dir.chdir(RAILS_BENCH_DIR) do
-    csystem "rvm use #{rvm_ruby_name} && gem install bundler && bundle", "Couldn't install bundler or RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+    csystem "rbenv shell #{mount_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{mount_ruby_name.inspect}!", :bash => true
   end
 
-
+  Dir.chdir(DISCOURSE_DIR) do
+    csystem "rbenv shell #{mount_ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{mount_ruby_name.inspect}!", :bash => true
+  end
 end
 
 puts "Create benchmark_ruby_versions.txt"
@@ -124,10 +122,7 @@ Dir.chdir(DISCOURSE_DIR) do
   end
 end
 
-# TODO: rvm or rbenv
-
 # TODO: increase database.yml pool from 5 to 30+
 # TODO(maybe): add initializer to add jquery_include.js to assets.precompile?
 # TODO(maybe): disable CSRF protection
-# TODO: for each Ruby, install Discourse's gems
 # TODO(maybe): brief benchmark run to make sure it works
