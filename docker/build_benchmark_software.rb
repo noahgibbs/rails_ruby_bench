@@ -115,7 +115,7 @@ File.open("/var/benchmark_ruby_versions.txt", "w") do |f|
 end
 
 Dir.chdir(DISCOURSE_DIR) do
-  csystem("RAILS_ENV=profile rake db:create db:migrate", "Couldn't create Discourse database!", :bash => true)
+  csystem("RAILS_ENV=profile bundle exec rake db:create db:migrate", "Couldn't create Discourse database!", :bash => true)
   unless File.exists?("public/assets")
     csystem("RAILS_ENV=profile bundle exec rake assets:precompile", "Failed to precompile Discourse assets!", :bash => true)
   end
