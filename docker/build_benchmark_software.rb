@@ -84,14 +84,23 @@ def clone_or_update_ruby_by_json(h, work_dir)
   h["mount_name"] = mount_name
 end
 
-# Build and mount each Ruby and install all gems
+# First, clone all the Rubies to get the network errors together up-front
 benchmark_software["compare_rubies"].each do |ruby_hash|
   puts "Installing Ruby: #{ruby_hash.inspect}"
   # Clone the Ruby, then build and mount if necessary
   if ruby_hash["git_url"]
     work_dir = File.join("/var/rubies", ruby_hash["name"])
     ruby_hash["checkout_dir"] = work_dir
-    clone_or_update_ruby_by_json(ruby_hash, work_dir)
+    clone_or_update_by_json(ruby_hash, work_dir)
+  end
+end
+
+# Build and mount each Ruby and install all gems
+benchmark_software["compare_rubies"].each do |ruby_hash|
+  puts "Installing Ruby: #{ruby_hash.inspect}"
+  # Clone the Ruby, then build and mount if necessary
+  if ruby_hash["git_url"]
+    clone_or_update_ruby_by_json(ruby_hash, ruby_hash["checkout_dir"])
   end
 
   puts "Mounted the built Ruby: #{ruby_hash.inspect}"
@@ -114,9 +123,9 @@ File.open("/var/benchmark_ruby_versions.txt", "w") do |f|
   f.print rubies.join("\n")
 end
 
-Dir.chdir(DISCOURSE_DIR) do
-  csystem("RAILS_ENV=profile bundle exec rake db:create db:migrate", "Couldn't create Discourse database!", :bash => true)
-  unless File.exists?("public/assets")
-    csystem("RAILS_ENV=profile bundle exec rake assets:precompile", "Failed to precompile Discourse assets!", :bash => true)
-  end
-end
+#Dir.chdir(DISCOURSE_DIR) do
+#  csystem("RAILS_ENV=profile bundle exec rake db:create db:migrate", "Couldn't create Discourse database!", :bash => true)
+#  unless File.exists?("public/assets")
+#    csystem("RAILS_ENV=profile bundle exec rake assets:precompile", "Failed to precompile Discourse assets!", :bash => true)
+#  end
+#end
