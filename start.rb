@@ -26,7 +26,7 @@ puma_processes = 10
 puma_threads = 6
 no_warm_start = false
 no_startup_shutdown = false
-discourse_dir = [ "/var/www/discourse", "work/discourse" ].select? { |d| File.exist?(d) }
+discourse_dir = [ "/var/www/discourse", "work/discourse" ].select { |d| File.exist?(d) }
 
 modified_startup_shutdown = true
 
