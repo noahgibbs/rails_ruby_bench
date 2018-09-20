@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 RAILS_BENCH_DIR = "/var/rails_ruby_bench"
+DISCOURSE_DIR = "/var/www/discourse"
 
 class DockerBuildError < RuntimeError; end
 
@@ -18,12 +19,14 @@ end
 # And check to make sure the benchmark actually runs... But just do a few iterations.
 Dir.chdir(RAILS_BENCH_DIR) do
   begin
-    csystem "./start.rb -s 1 -n 1 -i 10 -w 0 -o /tmp/ -c 1", "Couldn't successfully run the benchmark!", :bash => true
+    csystem "./start.rb -n 1 -i 10 -w 0 -o /tmp/ --no-startup-shutdown", "Couldn't successfully run the benchmark!", :bash => true
   rescue DockerBuildError
     # Before dying, let's look at that Rails logfile... Redirect stdout to stderr.
-    print "Error running test iterations of the benchmark, printing Rails log to console!\n==========\n"
-    print `tail -60 work/discourse/log/profile.log`   # If we echo too many lines they just get cut off by Packer
-    print "=============\n"
+    if File.exist?(DISCOURSE_DIR + "/log/profile.log")
+      print "Error running test iterations of the benchmark, printing Rails log to console!\n==========\n"
+      print `tail -60 #{DISCOURSE_DIR}/log/profile.log`   # If we echo too many lines they just get cut off by Packer
+      print "=============\n"
+    end
     raise # Re-raise the error, we still want to die.
   end
 end

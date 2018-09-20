@@ -10,7 +10,6 @@ require 'get_process_mem'
 
 # Run this in "profile" environment for Discourse.
 ENV['RAILS_ENV'] = 'profile'
-require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
 
 startup_iters = 2
 random_seed = 16541799507913229037  # Chosen via irb and '(1..20).map { (0..9).to_a.sample }.join("")'
@@ -26,6 +25,10 @@ out_file = nil
 puma_processes = 10
 puma_threads = 6
 no_warm_start = false
+no_startup_shutdown = false
+discourse_dir = [ "/var/www/discourse", "work/discourse" ].select? { |d| File.exist?(d) }
+
+modified_startup_shutdown = true
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby start.rb [options]"
@@ -46,6 +49,7 @@ OptionParser.new do |opts|
   end
   opts.on("-s", "--num-startup-iters NUMBER", "number of startup/shutdown iterations") do |n|
     startup_iters = n.to_i
+    modified_startup_shutdown = true
   end
   opts.on("-w", "--warmup NUMBER", "number of warm-up iterations") do |n|
     warmup_iterations = n.to_i
@@ -61,14 +65,30 @@ OptionParser.new do |opts|
   end
   opts.on("-t", "--threads-per-server NUMBER", "number of Puma threads per server process") do |t|
     puma_threads = t.to_i
+    modified_startup_shutdown = true
   end
   opts.on("-c", "--cluster-processes NUMBER", "number of Puma processes in cluster mode") do |c|
     puma_processes = c.to_i
+    modified_startup_shutdown = true
   end
   opts.on("-a", "--no-warm-start", "Do not do the normal automatic start/stop warmup iteration") do
     no_warm_start = true
+    modified_startup_shutdown = true
+  end
+  opts.on("--no-startup-shutdown", "Run against an existing server, don't start up or shut down Discourse") do
+    no_startup_shutdown = true
+  end
+  opts.on("--discourse-dir DIRECTORY", "Discourse installation to use") do |d|
+    discourse_dir = d
   end
 end.parse!
+
+if no_startup_shutdown && modified_startup_shutdown
+  STDERR.puts "You both specified no startup or shutdown and specified startup/shutdown options like the number of Puma processes or threads, or not to do 'warmup' startups."
+  raise "Cannot specify no startup/shutdown along with how to do that startup/shutdown!"
+end
+
+require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
 
 raise "No such output directory as #{out_dir.inspect}!" unless File.directory?(out_dir)
 
@@ -77,7 +97,12 @@ PORT_NUM = port_num
 PUMA_THREADS = puma_threads
 PUMA_PROCESSES = puma_processes
 RANDOM_SEED = random_seed
+NO_STARTUP = no_startup_shutdown
 
+# This is, of course, not terribly secure. None of this should be run
+# on the Internet at large. Luckily, this benchmark will not normally
+# ever contain anything of value to a Hacker beyond access to the
+# instance itself.
 CONTROL_PORT = 9939
 CONTROL_TOKEN = "VeryModelOfAModernMajorGeneral"
 
@@ -100,10 +125,13 @@ def last_pid
 end
 
 def get_server_rss
+  return -1 if NO_STARTUP
   GetProcessMem.new(@started_pid).bytes
 end
 
 def get_puma_worker_rss
+  return -1 if NO_STARTUP
+
   out = `ps -o pid=,rss=,command=`
   rss = []
   lines = out.split
@@ -117,6 +145,8 @@ def get_puma_worker_rss
 end
 
 def get_server_gc_stats
+  return {} if NO_STARTUP
+
   # NOTE: This won't work until a version of Puma later than 3.9.1 (3.11.0 has it). So for now, don't use this.
   output = `bundle exec pumactl --control-url tcp://127.0.0.1:#{CONTROL_PORT} --control-token #{CONTROL_TOKEN} gc-stats`
   output.sub!(/^[^{]+/, "")
@@ -124,6 +154,8 @@ def get_server_gc_stats
 end
 
 def server_start
+  return if NO_STARTUP
+
   # Start the server
   @started_pid = fork do
     STDERR.print "In PID #{Process.pid}, starting server on port #{PORT_NUM}\n"
@@ -134,6 +166,8 @@ def server_start
 end
 
 def server_stop
+  return if NO_STARTUP
+
   begin
     csystem "RAILS_ENV=profile bundle exec pumactl --control-token #{CONTROL_TOKEN} --control-url tcp://127.0.0.1:#{CONTROL_PORT} halt", "Error trying to stop Puma via pumactl!"
   rescue BenchmarkSystemError
