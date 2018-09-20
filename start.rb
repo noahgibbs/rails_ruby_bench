@@ -88,7 +88,7 @@ if no_startup_shutdown && modified_startup_shutdown
   raise "Cannot specify no startup/shutdown along with how to do that startup/shutdown!"
 end
 
-require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
+require File.expand_path(File.join(File.dirname(__FILE__), "#{discourse_dir}/config/environment"))
 
 raise "No such output directory as #{out_dir.inspect}!" unless File.directory?(out_dir)
 
