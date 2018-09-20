@@ -28,7 +28,7 @@ no_warm_start = false
 no_startup_shutdown = false
 discourse_dir = [ "/var/www/discourse", "work/discourse" ].select { |d| File.exist?(d) }
 
-modified_startup_shutdown = true
+modified_startup_shutdown = false
 
 OptionParser.new do |opts|
   opts.banner = "Usage: ruby start.rb [options]"
