@@ -19,7 +19,7 @@ end
 # And check to make sure the benchmark actually runs... But just do a few iterations.
 Dir.chdir(RAILS_BENCH_DIR) do
   begin
-    csystem "./start.rb -n 1 -i 10 -w 0 -o /tmp/ --no-startup-shutdown", "Couldn't successfully run the benchmark!", :bash => true
+    csystem "bundle exec ./start.rb -n 1 -i 10 -w 0 -o /tmp/ --no-startup-shutdown", "Couldn't successfully run the benchmark!", :bash => true
   rescue DockerBuildError
     # Before dying, let's look at that Rails logfile... Redirect stdout to stderr.
     if File.exist?(DISCOURSE_DIR + "/log/profile.log")

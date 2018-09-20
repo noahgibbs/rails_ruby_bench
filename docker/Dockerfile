@@ -18,6 +18,7 @@ RUN apt-get install -y libsqlite3-dev
 
 # Clone Rails Ruby Bench
 RUN sudo -H -u discourse git clone ${RRB_GIT_URL} /var/rails_ruby_bench
+RUN sudo -H -u discourse bash -c "cd /var/rails_ruby_bench && git checkout docker_dev"
 
 # Install RRB gems into system Ruby
 RUN cd /var/rails_ruby_bench && bundle
