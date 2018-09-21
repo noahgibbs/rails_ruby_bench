@@ -21,9 +21,9 @@ end.parse!
 # Set the constant
 RANDOM_SEED = random_seed
 
-# we want our script to generate a consistent output, to do so
-#  we monkey patch array sample so it always uses the same rng.
-# All randomization in this script uses .sample.
+# we want our script to generate a consistent output, to do so we
+# monkey patch array sample so it always uses the same rng.  All
+# randomization in this script uses .sample.
 class Array
   RNG = Random.new(RANDOM_SEED)
 
