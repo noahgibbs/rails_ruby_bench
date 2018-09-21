@@ -36,8 +36,9 @@ class DiscourseClient
     @csrf = nil
     @prefix = "http://localhost:#{options[:port_num]}"
 
-    @last_topics = Topic.order('id desc').limit(10).pluck(:id)
-    @last_posts = Post.order('id desc').limit(10).pluck(:id)
+    # This isn't 100% the same as before, but should give very similar results.
+    @last_topics = (1..10).to_a
+    @last_posts = (1..10).to_a
   end
 
   def get_csrf_token
@@ -128,21 +129,15 @@ def log(s)
 end
 
 def time_actions(actions, user_offset, port_num)
-  user = User.offset(user_offset).first
-  unless user
-    print "No user at offset #{user_offset.inspect}! Exiting.\n"
-    exit -1
-  end
-
-  log "Simulating activity for user id #{user.id}: #{user.name}"
+  log "Simulating activity for user id #{user_id}"
 
   log "Getting Rails CSRF token..."
   client = DiscourseClient.new(port_num: port_num)
   client.get_csrf_token
 
   log "Logging in as #{user.username.inspect}... (not part of benchmark request time(s))"
-  client.request :post, "/session", { "login" => user.username, "password" => "longpassword" }
-  client.request :post, "/login", { "login" => user.username, "password" => "longpassword", "redirect" => "http://localhost:#{port_num}/" }
+  client.request :post, "/session", { "login" => "admin#{user_offset}", "password" => "longpassword" }
+  client.request :post, "/login", { "login" => "admin#{user_offset}", "password" => "longpassword", "redirect" => "http://localhost:#{port_num}/" }
 
   times = []
   t_last = Time.now
