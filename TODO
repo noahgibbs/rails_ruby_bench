@@ -7,3 +7,5 @@ Figure out how to handle Bundler.with_clean_env for start script invoking Discou
 Add environment vars to allow easily simultaneous building of multiple AMIs with the same EC2 creds, on the same build laptop
 
 Stop using RestClient for testing, to avoid overlap in dependencies with Discourse, which in turn screws up "bundle exec".
+
+In Docker work, clone Ruby repo as shared and use --reference to reuse: https://randyfay.com/content/reference-cache-repositories-speed-clones-git-clone-reference
