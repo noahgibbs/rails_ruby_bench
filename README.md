@@ -13,42 +13,66 @@ operations that don't take a lot of runtime.
 This Discourse-based benchmark steals some code from Discourse
 (e.g. user\_simulator.rb, seed\_db\_data.rb), so it's licensed GPLv2.
 
-I normally run this benchmark by building an AWS image using Packer
-and running it on a dedicated EC2 instance. For a variety of reasons,
-that gives very consistent benchmark results. It's also annoying for
-some use cases. If you can easily use AWS, I recommend it. For local
-configuration, keep reading.
+There are two supported ways to run this benchmark: AWS and Docker. If
+you want to do local development, use Docker. AWS is used for
+consistent results - it's easy to verify that the same hardware was
+used. Docker is easier to use, and more similar to how people normally
+deploy Discourse in production.
 
-## Running the Benchmark Locally (Incomplete Version)
+You *could* also configure it yourself as a local application. This is
+really quite difficult because Discourse's dependencies are extensive.
 
-If you think your computer is basically set up for Discourse already,
-here's the short version of the configuration. Are you worried that
-you may need more software? Scroll down to the complete version of the
-setup below.
+## Running with Docker
 
-Make sure to install the gems:
+For a rundown of how you'd normally use Docker-based Discourse, you
+can [see their
+documentation.](https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md)
+You'll do *nearly* the same thing.
 
-    $ bundle
+Instead of running discourse-setup, just copy docker/app.yml into your
+discourse_docker checkout. Then, when you set up Discourse, you'll get
+an image that contains the Rails Ruby Bench benchmark. After that,
+you'll run the benchmark against Discourse inside the
+container. Here's what that might look like as a series of steps:
 
-Note that Discourse (at least version 1.8) does not support Postgresql
-10, version 9 is needed.
+~~~
+# Install Docker, if you don't have it
+wget -qO- https://get.docker.com/ | sh
 
-Then, get Discourse set up:
+# Clone discourse_docker into a location of your choice - we'll use /var/discourse
+# sudo -s  # Not always needed
+mkdir /var/discourse
+git clone https://github.com/discourse/discourse_docker.git /var/discourse
+cd /var/discourse
 
-    $ cd work
-    $ git clone https://github.com/discourse/discourse.git
-    $ cd discourse
-    $ bundle
-    $ RAILS_ENV=profile rake db:create db:migrate  # If necessary, db:drop first
+# You can ignore email and domain setup if you're just using Discourse for RRB
 
-Then, run the database seeding script:
+# Copy app.yml into place instead of running discourse-setup
+cp ~/src/rails_ruby_bench/docker/app.yml /var/discourse
 
-    $ cd ../.. # Back to root directory rather than work/discourse
-    $ RAILS_ENV=profile ruby seed_db_data.rb  # And wait awhile - it's slow
+# Run the launcher
+./launcher bootstrap app
+./launcher start app
 
-Now you can run the benchmark:
+# Don't worry about checking in the browser or making an admin account
 
-    $ ./start.rb
+# -- End of Steps from Discourse --
+
+# Run the benchmark - you can add options after ./start.rb
+./launcher run "cd /var/rails_ruby_bench && ./start.rb"
+~~~
+
+## Building It Yourself with Docker
+
+The "docker" subdirectory contains a lot of important bits - the
+Dockerfile, the build script (build.sh) and so on. If you need to
+modify them to change configuration, you'll want to build with a
+different name/tag.
+
+You can change build.sh to use a different name, or just do the same
+thing it does and build from the Dockerfile on the command line.
+
+You'll also need to change app.yml to use your new base_image name.
 
 ## Command-Line Options
 
@@ -64,42 +88,23 @@ Start.rb supports a number of options:
     -t NUMBER      Threads per Puma server
     -c NUMBER      Number of cluster processes for Puma
 
-## Running the Benchmark Locally (Complete Version)
+## Running the Benchmark with Packer
 
-For the AWS build, RRB uses Packer to create an image configured for
-Discourse, 100% from scratch. That means the Packer directory includes
-all the necessary configuration scripts to make that happen.
+First, make sure Packer is installed and that you have AWS set up.
 
-For very good reasons, RRB's Packer build separates these scripts into
-a lot of small steps. So the configuration is annoying :-(
+Then change into the "packer" subdirectory. Run "packer ami.json".
 
-If you want to be 100% sure you have all the latest configuration
-steps, read packer/ami.json - that's the configuration file that
-Packer actually uses to build the image, so it's basically guaranteed
-to work. It runs a lot of other small scripts which are stored in the
-packer directory. If you have trouble with these instructions, you may
-want to refer to the runnable script.
+That will build your AMI. You can start an instance from that AMI as
+normal. Once you've ssh'd into the image, change to the
+~ubuntu/rails_ruby_bench subdirectory and run ./start.rb.
 
-RRB tries to keep an up-to-date local install script, but it *does*
-sometimes get out of date:
+Be careful - by default, the instance will run some iterations of the
+benchmark on boot-up, just to have some data available. Make sure the
+initial benchmark run has completed before your start your own. You
+can check with "ps aux | grep ruby" and make sure no processes are
+currently running.
 
-```bash
-Switch to a 2.3.4 or 2.4.1 Ruby
-$ ruby packer/setup.rb --local
-```
-
-You'll also need Discourse's dependencies - the benchmark uses
-Discourse, so you'll need to manage a local copy of Discourse.
-There's a script in the Discourse directory you can look at on OS X
-under work/discourse/script/osx_dev.  Refer to
-[this page](https://github.com/discourse/discourse/blob/v1.8.0.beta13/docs/DEVELOPER-ADVANCED.md#preparing-a-fresh-ubuntu-install)
-for Linux.
-
-Rerun the setup until it succeeds.
-
-Then run start.rb to run the server and the benchmark.
-
-## Customizing the Benchmark
+### Customizing the Benchmark with Packer
 
 The benchmark uses the Ruby and Discourse versions found in
 setup.json. You can customize them there, then re-run setup.rb.
