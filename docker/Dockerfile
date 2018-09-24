@@ -35,5 +35,6 @@ RUN chmod +x /tmp/build_benchmark_software.rb && sudo -H -u discourse /tmp/build
 ADD benchmark_discourse_setup.rb /tmp/benchmark_discourse_setup.rb
 RUN chmod +x /tmp/benchmark_discourse_setup.rb && sudo -H -u discourse /tmp/benchmark_discourse_setup.rb
 
-ADD test_benchmark_run.rb /tmp/test_benchmark_run.rb
-RUN chmod +x /tmp/test_benchmark_run.rb && sudo -H -u discourse /tmp/test_benchmark_run.rb
+# Test_benchmark_run doesn't work unless the server is up and running, everything booted, etc.
+#ADD test_benchmark_run.rb /tmp/test_benchmark_run.rb
+#RUN chmod +x /tmp/test_benchmark_run.rb && sudo -H -u discourse /tmp/test_benchmark_run.rb

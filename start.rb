@@ -332,6 +332,7 @@ def full_iteration_start_stop
   with_started_server do
     print "Server is started, running start/stop iteration...\n"
     server_output, elapsed = single_run_benchmark_output_and_time
+    print "Finished full iteration"
     #print "Output:\n#{server_output}\n"
   end
   elapsed.to_f
