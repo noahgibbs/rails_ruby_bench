@@ -9,7 +9,7 @@
 ## Visit http://www.yamllint.com/ to validate this file as needed
 
 ## NOT FOR PRODUCTION DISCOURSE USE! THIS IS A BENCHMARK!
-base_image: noahgibbs/rails_ruby_bench/base
+base_image: noahgibbs/rails_ruby_bench
 
 templates:
   - "templates/postgres.template.yml"
