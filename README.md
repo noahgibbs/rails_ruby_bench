@@ -30,17 +30,17 @@ documentation.](https://github.com/discourse/discourse/blob/master/docs/INSTALL-
 You'll do *nearly* the same thing.
 
 Instead of running discourse-setup, just copy docker/app.yml into your
-discourse_docker checkout. Then, when you set up Discourse, you'll get
-an image that contains the Rails Ruby Bench benchmark. After that,
-you'll run the benchmark against Discourse inside the
-container. Here's what that might look like as a series of steps:
+discourse_docker checkout's "countainer" directory. Then, when you set
+up Discourse, you'll get an image that contains the Rails Ruby Bench
+benchmark. After that, you'll run the benchmark against Discourse
+inside the container. Here's what that might look like as a series of
+steps:
 
 ~~~
 # Install Docker, if you don't have it
 wget -qO- https://get.docker.com/ | sh
 
 # Clone discourse_docker into a location of your choice - we'll use /var/discourse
-# sudo -s  # Not always needed
 mkdir /var/discourse
 git clone https://github.com/discourse/discourse_docker.git /var/discourse
 cd /var/discourse
@@ -48,9 +48,10 @@ cd /var/discourse
 # You can ignore email and domain setup if you're just using Discourse for RRB
 
 # Copy app.yml into place instead of running discourse-setup
-cp ~/src/rails_ruby_bench/docker/app.yml /var/discourse
+cp ~/src/rails_ruby_bench/docker/app.yml /var/discourse/containers/
 
 # Run the launcher
+sudo -s  # Needed by Docker
 ./launcher bootstrap app
 ./launcher start app
 
