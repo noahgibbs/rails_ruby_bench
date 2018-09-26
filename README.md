@@ -40,19 +40,20 @@ steps:
 # Install Docker, if you don't have it
 wget -qO- https://get.docker.com/ | sh
 
-# Clone discourse_docker into a location of your choice - we'll use /var/discourse
-mkdir /var/discourse
-git clone https://github.com/discourse/discourse_docker.git /var/discourse
-cd /var/discourse
+# Clone discourse_docker into a location of your choice - we'll use ~/src/discourse for the examples
+mkdir ~/src/discourse_docker
+git clone https://github.com/discourse/discourse_docker.git ~/src/discourse_docker
+cd ~/src/discourse_docker
 
 # You can ignore email and domain setup if you're just using Discourse for RRB
 
 # Copy app.yml into place instead of running discourse-setup
-cp ~/src/rails_ruby_bench/docker/app.yml /var/discourse/containers/
+cp ~/src/rails_ruby_bench/docker/app.yml ~/src/discourse_docker/containers/
 
 # Run the launcher
 sudo -s  # Needed by Docker
-./launcher bootstrap app
+# The prereqs check fails on standard MacOS Docker, which returns an incorrect root dir
+./launcher bootstrap app --skip-prereqs
 ./launcher start app
 
 # Don't worry about checking in the browser or making an admin account
@@ -60,7 +61,7 @@ sudo -s  # Needed by Docker
 # -- End of Steps from Discourse --
 
 # Run the benchmark - you can add options after ./start.rb
-./launcher run "cd /var/rails_ruby_bench && ./start.rb"
+./launcher run "cd ~/src/rails_ruby_bench && ./start.rb"
 ~~~
 
 ## Building It Yourself with Docker
