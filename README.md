@@ -53,15 +53,14 @@ cp ~/src/rails_ruby_bench/docker/app.yml ~/src/discourse_docker/containers/
 # Run the launcher
 sudo -s  # Needed by Docker
 # The prereqs check fails on standard MacOS Docker, which returns an incorrect root dir
-./launcher bootstrap app --skip-prereqs
-./launcher start app
+./launcher rebuild app --skip-prereqs
 
 # Don't worry about checking in the browser or making an admin account
 
 # -- End of Steps from Discourse --
 
 # Run the benchmark - you can add options after ./start.rb
-./launcher run "cd ~/src/rails_ruby_bench && ./start.rb"
+./launcher run "cd ~/src/rails_ruby_bench && ./start.rb" --skip-prereqs
 ~~~
 
 ## Building It Yourself with Docker

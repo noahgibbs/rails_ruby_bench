@@ -16,6 +16,9 @@ RUN apt-get install -y bison autoconf build-essential libssl-dev libyaml-dev lib
 # Additional SQLite3 package, mostly for Mailcatcher gem
 RUN apt-get install -y libsqlite3-dev
 
+# Additional system and debugging tools
+RUN apt-get install -y net-tools
+
 # Clone Rails Ruby Bench
 RUN sudo -H -u discourse git clone ${RRB_GIT_URL} /var/rails_ruby_bench
 RUN sudo -H -u discourse bash -c "cd /var/rails_ruby_bench && git checkout docker_dev"
@@ -23,18 +26,21 @@ RUN sudo -H -u discourse bash -c "cd /var/rails_ruby_bench && git checkout docke
 # Install RRB gems into system Ruby
 RUN cd /var/rails_ruby_bench && bundle
 
-ADD install_rbenv.sh /tmp/install_rbenv.sh
+COPY install_rbenv.sh /tmp/install_rbenv.sh
 RUN chmod +x /tmp/install_rbenv.sh && sudo -H -u discourse /tmp/install_rbenv.sh
 
 # Copy in Ruby settings, which may be modified from checked-in version
-ADD benchmark_software.json /tmp/benchmark_software.json
+COPY benchmark_software.json /tmp/benchmark_software.json
 
-ADD build_benchmark_software.rb /tmp/build_benchmark_software.rb
+COPY build_benchmark_software.rb /tmp/build_benchmark_software.rb
 RUN chmod +x /tmp/build_benchmark_software.rb && sudo -H -u discourse /tmp/build_benchmark_software.rb
 
-ADD benchmark_discourse_setup.rb /tmp/benchmark_discourse_setup.rb
+COPY benchmark_discourse_setup.rb /tmp/benchmark_discourse_setup.rb
 RUN chmod +x /tmp/benchmark_discourse_setup.rb && sudo -H -u discourse /tmp/benchmark_discourse_setup.rb
 
 # Test_benchmark_run doesn't work unless the server is up and running, everything booted, etc.
-#ADD test_benchmark_run.rb /tmp/test_benchmark_run.rb
+#COPY test_benchmark_run.rb /tmp/test_benchmark_run.rb
 #RUN chmod +x /tmp/test_benchmark_run.rb && sudo -H -u discourse /tmp/test_benchmark_run.rb
+
+COPY bench_start.sh /home/discourse/bench_start.sh
+RUN chmod +x /home/discourse/bench_start.sh
