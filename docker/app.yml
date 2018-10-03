@@ -26,8 +26,9 @@ templates:
 ## If you want Discourse to share a port with another webserver like Apache or nginx,
 ## see https://meta.discourse.org/t/17247 for details
 expose:
-  - "80:80"   # http
-  - "443:443" # https
+  - "4321:80"   # http
+  - "4322:3000" # unicorn
+  - "4323:443"  # https
 
 params:
   db_default_text_search_config: "pg_catalog.english"
@@ -52,7 +53,7 @@ env:
 
   ## TODO: The domain name this Discourse instance will respond to
   ## Required. Discourse will not work with a bare IP number.
-  DISCOURSE_HOSTNAME: discourse.example.com
+  DISCOURSE_HOSTNAME: discourse.fakebenchmark.com
 
   ## Uncomment if you want the container to be started with the same
   ## hostname (-h option) as specified above (default "$hostname-$config")
