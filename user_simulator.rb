@@ -129,13 +129,13 @@ def log(s)
 end
 
 def time_actions(actions, user_offset, port_num)
-  log "Simulating activity for user id #{user_id}"
+  log "Simulating activity for user offset #{user_offset}"
 
   log "Getting Rails CSRF token..."
   client = DiscourseClient.new(port_num: port_num)
   client.get_csrf_token
 
-  log "Logging in as #{user.username.inspect}... (not part of benchmark request time(s))"
+  log "Logging in as admin#{user_offset}... (not part of benchmark request time(s))"
   client.request :post, "/session", { "login" => "admin#{user_offset}", "password" => "longpassword" }
   client.request :post, "/login", { "login" => "admin#{user_offset}", "password" => "longpassword", "redirect" => "http://localhost:#{port_num}/" }
 
