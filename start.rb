@@ -341,7 +341,7 @@ end
 require_relative "user_simulator"
 
 # One Burn-in Start/Stop Iteration
-unless no_warm_start
+unless no_warm_start || no_startup_shutdown
   print "Starting and stopping server to preload caches...\n"
   full_iteration_start_stop
 end
@@ -355,9 +355,13 @@ final_rss = nil
 first_gc_stat = nil
 last_gc_stat = nil
 
-print "Running start-time benchmarks for #{startup_iters} iterations...\n"
-startup_times = (1..startup_iters).map { full_iteration_start_stop }
+startup_times = []
 request_times = nil
+
+unless no_startup_shutdown
+  print "Running start-time benchmarks for #{startup_iters} iterations...\n"
+  startup_times = (1..startup_iters).map { full_iteration_start_stop }
+end
 
 with_running_server do
   loaded_rss = get_server_rss
