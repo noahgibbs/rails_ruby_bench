@@ -124,9 +124,9 @@ def last_pid
   @started_pid
 end
 
-def get_server_rss
+def get_server_rss(pid = @started_pid)
   return -1 if NO_STARTUP
-  GetProcessMem.new(@started_pid).bytes
+  GetProcessMem.new(pid).bytes
 end
 
 def get_puma_worker_rss
@@ -360,7 +360,7 @@ startup_times = (1..startup_iters).map { full_iteration_start_stop }
 request_times = nil
 
 with_running_server do
-  loaded_rss = GetProcessMem.new(last_pid).bytes
+  loaded_rss = get_server_rss
   #first_gc_stat = get_server_gc_stats
 
   # By randomizing all "real" actions before all warmups, we guarantee
@@ -382,7 +382,7 @@ with_running_server do
   unless worker_iterations == 0
     worker_times = jsonable_with_num_processes(worker_processes) { multithreaded_actions(worker_actions, workers, PORT_NUM) }
   end
-  final_rss = GetProcessMem.new(last_pid).bytes
+  final_rss = get_server_rss
   #last_gc_stat = get_server_gc_stats
 end # Stop the Rails server after all interactions have finished.
 
