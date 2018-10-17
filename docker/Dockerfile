@@ -44,3 +44,6 @@ RUN chmod +x /tmp/benchmark_discourse_setup.rb && sudo -H -u discourse /tmp/benc
 
 COPY bench_start.sh /home/discourse/bench_start.sh
 RUN chmod +x /home/discourse/bench_start.sh
+
+COPY forgery_protection_update.rb /tmp/forgery_protection_update.rb
+RUN chmod +x /tmp/forgery_protection_update.rb && ruby /tmp/forgery_protection_update.rb
