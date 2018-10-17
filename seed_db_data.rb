@@ -62,7 +62,12 @@ def create_admin(seq)
   }
 end
 
-require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
+FILE_LOCATIONS = [
+  File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment.rb")),
+  "/var/www/discourse/config/environment.rb",
+]
+location = FILE_LOCATIONS.first { |f| File.exist?(f) }
+require location
 
 unless Rails.env == "profile"
   puts "This script should only be used in the profile environment"
