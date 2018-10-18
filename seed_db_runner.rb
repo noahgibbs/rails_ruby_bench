@@ -1,9 +1,21 @@
-#!/usr/bin/env ruby
+# This is a runner script. It should normally be run with something like:
+# bin/rails runner -e profile /path/to/seed_db_runner.rb -d
+
+unless Rails.env == "profile"
+  puts "This script should only be used in the profile environment"
+  exit
+end
+
+# by default, Discourse has a "system" account
+if User.count > 1
+  puts "Only run this script against an empty DB (and in RAILS_ENV=profile)"
+  exit
+end
 
 # Based on Discourse's profile_db_generator
 
 require 'optparse'
-require 'gabbler'
+require_relative 'gabbler'
 
 random_seed = 2546769937
 do_drop = false
@@ -62,30 +74,11 @@ def create_admin(seq)
   }
 end
 
-FILE_LOCATIONS = [
-  File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment.rb")),
-  "/var/www/discourse/config/environment.rb",
-]
-location = FILE_LOCATIONS.detect { |f| File.exist?(f) }
-require location
-DISCOURSE_DIR = File.expand_path(File.join File.dirname(location), "..")
-
-unless Rails.env == "profile"
-  puts "This script should only be used in the profile environment"
-  exit
-end
-
 if do_drop
   system "cd #{DISCOURSE_DIR} && RAILS_ENV=profile rake db:drop db:create db:migrate"
 end
 
 SiteSetting.queue_jobs = false
-
-# by default, Discourse has a "system" account
-if User.count > 1
-  puts "Only run this script against an empty DB (and in RAILS_ENV=profile)"
-  exit
-end
 
 puts "Creating 100 users"
 users = 100.times.map do |i|
