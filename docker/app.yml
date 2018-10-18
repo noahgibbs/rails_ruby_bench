@@ -103,4 +103,10 @@ run:
   ## If you want to set the 'From' email address for your first registration, uncomment and change:
   ## After getting the first signup email, re-comment the line. It only needs to run once.
   #- exec: rails r "SiteSetting.notification_email='info@unconfigured.discourse.org'"
+  - exec: su postgres -c 'createdb discourse_profile' || true
+  - exec: su postgres -c 'psql discourse_profile -c "grant all privileges on database discourse_profile to discourse;"' || true
+  - exec: su postgres -c 'psql discourse_profile -c "alter schema public owner to discourse;"'
+  - exec: cd /var/www/discourse && su discourse -c 'RAILS_ENV=profile bundle exec rake db:migrate'
+  - exec: /tmp/forgery_protection_update.rb
+  - exec: cd /var/www/discourse && sudo -H -u discourse bash -l -c "RAILS_ENV=profile bin/rails runner /var/rails_ruby_bench/seed_db_runner.rb"
   - exec: echo "End of custom commands"
