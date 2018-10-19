@@ -6,12 +6,6 @@ unless Rails.env == "profile"
   exit
 end
 
-# by default, Discourse has a "system" account
-if User.count > 1
-  puts "Only run this script against an empty DB (and in RAILS_ENV=profile)"
-  exit
-end
-
 # Based on Discourse's profile_db_generator
 
 require 'optparse'
