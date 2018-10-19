@@ -3,7 +3,7 @@
 DISCOURSE_DIR = "/var/www/discourse"
 APP_CONTROLLER = File.join(DISCOURSE_DIR, "app/controllers/application_controller.rb")
 
-PATCHED_SNIPPET = "protect_from_forgery, :only => []"
+PATCHED_SNIPPET = "protect_from_forgery only: []"
 UNPATCHED_SNIPPET = "protect_from_forgery"
 
 
