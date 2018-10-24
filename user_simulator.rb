@@ -12,6 +12,7 @@
 #  :port_num => 4567,
 #  :worker_threads => 5,
 #  :out_dir => "/tmp",
+#  :debug => false,
 #}
 
 def sentence
@@ -32,9 +33,10 @@ ACTIONS = [:read_topic, :post_reply, :post_topic, :get_latest]  # Not active: :s
 
 class DiscourseClient
   def initialize(options)
-    @cookies = nil
+    @cookies = {}
     @csrf = nil
     @prefix = "http://localhost:#{options[:port_num]}"
+    @debug = options[:debug] || false
 
     # This isn't 100% the same as before, but should give very similar results.
     @last_topics = (1..10).to_a
@@ -43,22 +45,38 @@ class DiscourseClient
 
   def get_csrf_token
     resp = RestClient.get "#{@prefix}/session/csrf.json"
-    @cookies = resp.cookies
+    @cookies.merge! resp.cookies
     @csrf = JSON.parse(resp.body)["csrf"]
+    if @debug
+      STDERR.puts "Getting CSRF token. Token: #{@csrf.inspect}, Cookies: #{@cookies.inspect}, CSRF body: #{resp.body.inspect}"
+    end
   end
 
   def request(method, url, payload = nil)
+    if @debug
+      STDERR.puts "Sending request: #{method.inspect} / #{url.inspect}"
+    end
     args = { :method => method, :url => "#{@prefix}#{url}", :cookies => @cookies, :headers => { "X-CSRF-Token" => @csrf } }
     args[:payload] = payload if payload
     begin
       resp = RestClient::Request.execute args
     rescue RestClient::Found => e  # 302 redirect
+      if @debug
+        STDERR.puts "Redirected... Auto-following."
+      end
       resp = e.response
     rescue RestClient::Exception   # Any other RestClient failure
       STDERR.puts "Got exception when #{method.to_s.upcase}ing #{url.inspect}..."
+      if @debug
+        STDERR.puts "Exception inspect: #{$!.inspect}"
+      end
       raise
     end
-    @cookies = resp.cookies  # Maintain continuity of cookies
+    @cookies.merge! resp.cookies  # Maintain continuity of cookies
+    if @debug
+      STDERR.puts "Request completed: #{method.to_s.upcase} #{url.inspect}"
+      STDERR.puts "New cookies: #{@cookies.inspect}"
+    end
     resp
   end
 
