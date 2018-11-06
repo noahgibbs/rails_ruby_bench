@@ -150,12 +150,15 @@ def time_actions(actions, user_offset, port_num)
   log "Simulating activity for user offset #{user_offset}"
 
   log "Getting Rails CSRF token..."
-  client = DiscourseClient.new(port_num: port_num)
-  client.get_csrf_token
+  client = DiscourseClient.new(port_num: port_num, debug: true)
 
   log "Logging in as admin#{user_offset}... (not part of benchmark request time(s))"
-  client.request :post, "/session", { "login" => "admin#{user_offset}", "password" => "longpassword" }
-  client.request :post, "/login", { "login" => "admin#{user_offset}", "password" => "longpassword", "redirect" => "http://localhost:#{port_num}/" }
+  reply = client.request :post, "/session", { "login" => "admin#{user_offset}", "password" => "longpassword" }
+  STDERR.puts "\n***\n***\n***\n\n\nReply: #{reply.to_s}\n***\n***\n"
+  client.get_csrf_token # TODO: Does login change this?
+
+  # The login action is just to redirect - skip it
+  #client.request :post, "/login", { "login" => "admin#{user_offset}", "password" => "longpassword", "redirect" => "http://localhost:#{port_num}/" }
 
   times = []
   t_last = Time.now
@@ -195,7 +198,7 @@ def multithreaded_actions(actions, worker_threads, port_num)
           end
         end
       rescue Exception => e
-        STDERR.print "Exception in worker thread: #{e.message}\n#{e.backtrace.join("\n")}\n"
+        STDERR.print "Exception in worker thread: #{e.message}\n#{e.inspect}\n#{e.backtrace.join("\n")}\n"
         raise e # Re-raise the exception
       end
     end
