@@ -20,7 +20,10 @@ sudo apt-get update
 whoami > /tmp/username
 sudo add-apt-repository ppa:chris-lea/redis-server
 sudo apt-get -yqq update
-sudo apt-get -yqq --allow-unauthenticated install vim curl expect debconf-utils git-core build-essential zlib1g-dev libssl1.0-dev openssl libcurl4-openssl-dev libreadline6-dev libpcre3 libpcre3-dev imagemagick postgresql postgresql-contrib libpq-dev redis-server advancecomp gifsicle jhead jpegoptim libjpeg-turbo-progs optipng pngcrush pngquant gnupg2
+sudo apt-get -yqq --allow-unauthenticated install vim curl expect debconf-utils git-core build-essential zlib1g-dev libssl1.0-dev openssl
+sudo apt-get -yqq --allow-unauthenticated install libcurl4-openssl-dev libreadline6-dev libpcre3 libpcre3-dev imagemagick
+sudo apt-get -yqq --allow-unauthenticated install postgresql postgresql-contrib libpq-dev redis-server advancecomp
+sudo apt-get -yqq --allow-unauthenticated install gifsicle jhead jpegoptim libjpeg-turbo-progs optipng pngcrush pngquant gnupg2
 
 # Ruby
 curl -sSL https://rvm.io/mpapis.asc | gpg2 --import -
