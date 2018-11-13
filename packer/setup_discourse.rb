@@ -67,6 +67,13 @@ DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
 
+# Ubuntu Bionic's libssl-dev is OpenSSL 1.1, which isn't Puma-compatible. We've installed OpenSSL 1.0, but we need
+# to make sure we *use* it. Something's uninstalling it...
+# See: https://github.com/puma/puma/issues/1136
+csystem "sudo apt-get -yqq --allow-unauthenticated install libssl1.0-dev", "Couldn't reinstall OpenSSL 1.0 dev package!"
+csystem "gem install puma -v '3.6.0' -- --with-cppflags=-I/usr/include/openssl-1.0 --with-ldflags=-L/usr/lib/openssl-1.0", "Couldn't install Puma w/ OpenSSL 1.0"
+#csystem "sudo apt-get uninstall -yqq libssl-dev", "Couldn't uninstall libssl-dev"
+
 # Install Discourse gems into RVM-standard Ruby installed for Discourse
 Dir.chdir(DISCOURSE_DIR) do
   csystem "gem install bundle", "Couldn't install bundler for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
