@@ -17,7 +17,7 @@ benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
 RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
 
-DISCOURSE_DIR = ENV["DISCOURSE_DIR"] || File.join(base, "..", "work", "discourse")
+DISCOURSE_DIR = ENV["DISCOURSE_DIR"] || File.join(__dir__, "work", "discourse")
 DISCOURSE_URL = ENV["DISCOURSE_URL"] || benchmark_software["discourse"]["git_url"]
 DISCOURSE_TAG = ENV["DISCOURSE_TAG"] || benchmark_software["discourse"]["git_tag"]
 
@@ -105,6 +105,21 @@ def clone_or_update_ruby_by_json(h, work_dir)
   h["mount_name"] = "ext-" + mount_name
 end
 
+# When you run with "rvm use", you wind up with a bunch of extra
+# output that you usually don't want.  You need to cut out just the
+# last line, remove extraneous newlines, make sure .bash_profile has
+# been sourced...
+def last_line_with_ruby(cmd, ruby)
+  output = `bash -l -c \"rvm use #{ruby} && #{cmd}\"`
+  unless $?.success?
+    puts "Something went wrong running command... #{$?.inspect} / #{cmd.inspect}"
+    return nil
+  end
+  last = output.split("\n").compact[-1]
+  puts "Last: #{last.inspect}\nFull:\n#{output}\n====="
+  last
+end
+
 if LOCAL
   RAILS_BENCH_DIR = File.expand_path("../..", __FILE__)
 else
@@ -123,7 +138,8 @@ end
 
 # Install Rails Ruby Bench gems into system Ruby
 Dir.chdir(RAILS_BENCH_DIR) do
-  csystem "gem install bundler && bundle", "Couldn't install bundler or RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
+  csystem "gem install bundler", "Couldn't install bundler for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
+  csystem "bundle", "Couldn't install RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
 end
 
 if BUILD_RUBY
