@@ -11,6 +11,8 @@
 #
 # By default this script does nothing.
 
-sudo su ubuntu /bin/bash -l -c "cd /home/ubuntu/rails_ruby_bench && ruby ./start.rb --out-dir /var/www/html/benchmark-results 2>/tmp/benchmark_boot_stderr >> /tmp/benchmark_boot_console"
+#sudo su ubuntu /bin/bash -l -c "cd /home/ubuntu/rails_ruby_bench && ruby ./start.rb --out-dir /var/www/html/benchmark-results 2>/tmp/benchmark_boot_stderr >> /tmp/benchmark_boot_console"
+
+sudo /etc/init.d/redis-server start
 
 exit 0
