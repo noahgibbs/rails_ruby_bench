@@ -202,11 +202,12 @@ clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
 
 if LOCAL
   Dir.chdir(DISCOURSE_DIR) { csystem "bundle", "Couldn't install Discourse gems!", :bash => true }
-  Dir.chdir(RAILS_BENCH_DIR) do
-    # If there are already users added, this should exit without error and not change the database
-    puts "Adding seed data..."
-    csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
-  end
+end
+
+Dir.chdir(RAILS_BENCH_DIR) do
+  # If there are already users added, this should exit without error and not change the database
+  puts "Adding seed data..."
+  csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
 end
 
 FileUtils.touch "/tmp/setup_ran_correctly"

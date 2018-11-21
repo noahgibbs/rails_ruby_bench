@@ -38,3 +38,16 @@ unless contents[patched_line]
     f.print contents.gsub(original_line, patched_line)
   end
 end
+
+# Oh and hey, looks like Bootsnap breaks something in the load order when
+# including config/environment into start.rb. Joy.
+# TODO: merge this patching into a little table of patches?
+path = File.join(DISCOURSE_DIR, "config/boot.rb")
+contents = File.read(path)
+original_line = "if ENV['RAILS_ENV'] != 'production'"
+patched_line = "if ENV['RAILS_ENV'] != 'production' && ENV['RAILS_ENV'] != 'profile'"
+unless contents[patched_line]
+  File.open(path, "w") do |f|
+    f.print contents.gsub(original_line, patched_line)
+  end
+end
