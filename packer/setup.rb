@@ -112,12 +112,10 @@ end
 def last_line_with_ruby(cmd, ruby)
   output = `bash -l -c \"rvm use #{ruby} && #{cmd}\"`
   unless $?.success?
-    puts "Something went wrong running command... #{$?.inspect} / #{cmd.inspect}"
+    puts "Something went wrong running command, returning nil... #{$?.inspect} / #{cmd.inspect}"
     return nil
   end
-  last = output.split("\n").compact[-1]
-  puts "Last: #{last.inspect}\nFull:\n#{output}\n====="
-  last
+  output.split("\n").compact[-1]
 end
 
 if LOCAL
@@ -172,22 +170,23 @@ if BUILD_RUBY
           rvm_irb_path = last_line_with_ruby("which irb", rvm_ruby_name)
           rvm_bundler_stub = rvm_irb_path.sub(/irb$/, "bundle")
 
-          puts "Checking stub: #{rvm_bundler_stub.inspect} / #{File.exist?(rvm_bundler_stub)}"
+          puts "Checking RVM stub for bundler: #{rvm_bundler_stub.inspect} / #{File.exist?(rvm_bundler_stub)}"
           if File.exist?(rvm_bundler_stub)
             raise "RVM Bundler stub (#{rvm_bundler_stub.inspect}) exists but it's not in the path! Wait, what?"
           end
 
           # RVM presumably doesn't support "bundle" as a stub yet. Create it.
+          puts "Create new RVM stub for Bundler: this should only ever be needed on Ruby 2.6.0+ while not fully supported by RVM."
           csystem "ln -s #{builtin_bundler_path} #{rvm_bundler_stub}"
         else
-          # No built-in Bundler, no Bundler in the path. Install the gem.
-          puts "No builtin, installing the gem"
+          # No built-in Bundler in Ruby, no Bundler-from-a-gem in the path. Install the gem.
+          puts "No builtin or installed Bundler, installing the gem"
           csystem "rvm use #{rvm_ruby_name} && gem install bundler", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
         end
       end
 
       which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
-      puts "Fell through, trying to run bundle. #{which_bundle.inspect}"
+      puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
       csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
    end
   end
