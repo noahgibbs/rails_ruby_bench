@@ -1,7 +1,4 @@
 Go through a full run of test data, printing out exactly what it does, and find all the problems. Also, view Discourse after a full run and see all the problems.
 
-Figure out what the "final composite" score should look like. Right now, just looking at execution time for threads.
+Explicit JSON-check step at start of Packer build to quickly catch JSON errors in benchmark_software.json
 
-Figure out how to handle Bundler.with_clean_env for start script invoking Discourse. Right now it's a mess, and you can't "bundle exec ./start.rb", which isn't great.
-
-Add environment vars to allow easily simultaneous building of multiple AMIs with the same EC2 creds, on the same build laptop
