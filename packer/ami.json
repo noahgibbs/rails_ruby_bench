@@ -15,7 +15,15 @@
         "ami_name": "rails-ruby-benchmark {{timestamp}}",
 	"run_tags": {
 	    "Name": "Packer RailsRubyBench Builder{{user `builder_suffix`}}"
-	}
+	},
+        "launch_block_device_mappings": [
+          {
+            "device_name": "/dev/sda1",
+            "volume_size": 40,
+            "volume_type": "gp2",
+            "delete_on_termination": true
+          }
+        ]
     }],
     "provisioners": [{
         "type": "shell",
