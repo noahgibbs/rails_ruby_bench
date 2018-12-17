@@ -155,34 +155,14 @@ if BUILD_RUBY
 
     rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
     Dir.chdir(RAILS_BENCH_DIR) do
-      # In Ruby 2.6.0preview3 and later, Bundler is installed as part of Ruby. Check if that's true.
+      # In Ruby 2.6.0preview3 and later, Bundler is installed as part of Ruby. Check if that's present.
       bundle_path = last_line_with_ruby("which bundle", rvm_ruby_name)
-      ruby_path = last_line_with_ruby("which ruby", rvm_ruby_name)
-      builtin_bundler_path = ruby_path.sub(/ruby$/, "bundle")  # Check path where built-into-Ruby bundler would be
 
       puts "Checking bundler path: #{bundle_path.inspect}"
       if !bundle_path || bundle_path == ''
-        # Okay, so no Bundler is in the path yet
-
-        puts "Checking builtin bundler path: #{builtin_bundler_path.inspect}"
-        if File.exist?(builtin_bundler_path)
-          # Bundler is built-in but not in the path. RVM may not support it yet.
-          rvm_irb_path = last_line_with_ruby("which irb", rvm_ruby_name)
-          rvm_bundler_stub = rvm_irb_path.sub(/irb$/, "bundle")
-
-          puts "Checking RVM stub for bundler: #{rvm_bundler_stub.inspect} / #{File.exist?(rvm_bundler_stub)}"
-          if File.exist?(rvm_bundler_stub)
-            raise "RVM Bundler stub (#{rvm_bundler_stub.inspect}) exists but it's not in the path! Wait, what?"
-          end
-
-          # RVM presumably doesn't support "bundle" as a stub yet. Create it.
-          puts "Create new RVM stub for Bundler: this should only ever be needed on Ruby 2.6.0+ while not fully supported by RVM."
-          csystem "ln -s #{builtin_bundler_path} #{rvm_bundler_stub}"
-        else
-          # No built-in Bundler in Ruby, no Bundler-from-a-gem in the path. Install the gem.
-          puts "No builtin or installed Bundler, installing the gem"
-          csystem "rvm use #{rvm_ruby_name} && gem install bundler", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
-        end
+        # Okay, so no Bundler is in the path yet. Install the gem.
+        puts "No builtin or installed Bundler, installing the gem"
+        csystem "rvm use #{rvm_ruby_name} && gem install bundler", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
       end
 
       which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
