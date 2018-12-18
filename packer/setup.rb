@@ -148,27 +148,32 @@ if BUILD_RUBY
       work_dir = File.join(RAILS_BENCH_DIR, "work", ruby_hash["name"])
       ruby_hash["checkout_dir"] = work_dir
       clone_or_update_ruby_by_json(ruby_hash, work_dir)
+
+      #csystem "rvm list #2", "Error running rvm list [2] on Ruby #{ruby_hash.inspect}!", :debug => true
+      puts "Mount the built Ruby: #{ruby_hash.inspect}"
+
+      rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
+      Dir.chdir(RAILS_BENCH_DIR) do
+        # In Ruby 2.6.0preview3 and later, Bundler is installed as part of Ruby. Check if that's present.
+        bundle_path = last_line_with_ruby("which bundle", rvm_ruby_name)
+
+        puts "Checking bundler path: #{bundle_path.inspect}"
+        if !bundle_path || bundle_path == ''
+          # Okay, so no Bundler is in the path yet. Install the gem.
+          puts "No builtin or installed Bundler, installing the gem"
+          csystem "rvm use #{rvm_ruby_name} && gem install bundler", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+        end
+
+        which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
+        puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
+        csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+     end
+
+    elsif ruby_hash["rvm_name"]
+      csystem "rvm install #{ruby_hash["rvm_name"]}", "Couldn't use RVM to install Ruby named #{ruby_hash["rvm_name"]}!"
+      csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
     end
 
-    #csystem "rvm list #2", "Error running rvm list [2] on Ruby #{ruby_hash.inspect}!", :debug => true
-    puts "Mount the built Ruby: #{ruby_hash.inspect}"
-
-    rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
-    Dir.chdir(RAILS_BENCH_DIR) do
-      # In Ruby 2.6.0preview3 and later, Bundler is installed as part of Ruby. Check if that's present.
-      bundle_path = last_line_with_ruby("which bundle", rvm_ruby_name)
-
-      puts "Checking bundler path: #{bundle_path.inspect}"
-      if !bundle_path || bundle_path == ''
-        # Okay, so no Bundler is in the path yet. Install the gem.
-        puts "No builtin or installed Bundler, installing the gem"
-        csystem "rvm use #{rvm_ruby_name} && gem install bundler", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
-      end
-
-      which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
-      puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
-      csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
-   end
   end
 
   puts "Create benchmark_ruby_versions.txt"
