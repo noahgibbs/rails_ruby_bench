@@ -164,14 +164,18 @@ if BUILD_RUBY
           csystem "rvm use #{rvm_ruby_name} && gem install bundler", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
         end
 
-        which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
-        puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
-        csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
-     end
+        if ruby_hash["discourse"]
+          which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
+          puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
+          csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+        end
+      end
 
     elsif ruby_hash["rvm_name"]
       csystem "rvm install #{ruby_hash["rvm_name"]}", "Couldn't use RVM to install Ruby named #{ruby_hash["rvm_name"]}!"
-      csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
+      if ruby_hash["discourse"]
+        csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
+      end
     end
 
   end
