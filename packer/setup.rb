@@ -164,7 +164,7 @@ if BUILD_RUBY
           csystem "rvm use #{rvm_ruby_name} && gem install bundler", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
         end
 
-        if ruby_hash["discourse"]
+        if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
           which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
           puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
           csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
@@ -190,7 +190,7 @@ end
 clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
 
 if LOCAL
-  Dir.chdir(DISCOURSE_DIR) { csystem "bundle", "Couldn't install Discourse gems!", :bash => true }
+  Dir.chdir(DISCOURSE_DIR) { csystem "bundle", "Couldn't install Discourse gems into system Ruby!", :bash => true }
 end
 
 Dir.chdir(RAILS_BENCH_DIR) do

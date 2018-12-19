@@ -59,9 +59,12 @@ Dir["#{ENV["HOME"]}/.rvm/rubies/*"].each do |ruby_name|
   next if ["default", "ruby-2.4.1"].include?(ruby_name)  # Don't bother with the system Ruby or default
   first_ruby ||= ruby_name  # What's the first comparison Ruby?
 
-  puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
-  Dir.chdir(DISCOURSE_DIR) do
-    csystem "rvm use #{ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+  ruby_hash = benchmark_software["compare_rubies"][ruby_name] || {}
+  if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
+    puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
+    Dir.chdir(DISCOURSE_DIR) do
+      csystem "rvm use #{ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+    end
   end
 end
 
