@@ -55,7 +55,7 @@
     }, {
         "type": "shell",
 	"inline": [
-	    "cd /home/ubuntu && git clone https://github.com/noahgibbs/rails_ruby_bench.git"
+	    "cd /home/ubuntu && git clone https://github.com/noahgibbs/rails_ruby_bench.git && git clone https://github.com/noahgibbs/rsb.git"
 	]
     }, {
 	"type": "file",
