@@ -52,20 +52,32 @@ DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 # only do we touch the file (to make sure this worked), we also split
 # out installing Discourse's gems into its own step.
 
+benchmark_software["compare_rubies"].each do |ruby_hash|
+  ruby_hash["found_name"] = ruby_hash["rvm_name"] || ruby_hash["name"]
+end
+
 first_ruby = nil
 # We can't easily match up the benchmark_software entries with Ruby names...
 Dir["#{ENV["HOME"]}/.rvm/rubies/*"].each do |ruby_name|
   ruby_name = ruby_name.split("/")[-1]
   next if ["default", "ruby-2.4.1"].include?(ruby_name)  # Don't bother with the system Ruby or default
-  first_ruby ||= ruby_name  # What's the first comparison Ruby?
 
-  ruby_hash = benchmark_software["compare_rubies"][ruby_name] || {}
-  if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
-    puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
-    Dir.chdir(DISCOURSE_DIR) do
-      csystem "rvm use #{ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+  # ruby_name should contain one of the Ruby Names from benchmark_software - check if we should install Discourse
+  # gems, which is useless (and sometimes impossible) on older Rubies.
+  match_hash = benchmark_software["compare_rubies"].detect { |hash| ruby_name[hash["found_name"]] }
+  if match_hash
+    if !match_hash.has_key?("discourse") || match_hash["discourse"]
+      first_ruby ||= ruby_name  # What's the first comparison Ruby that installs Discourse gems?
+      puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
+      Dir.chdir(DISCOURSE_DIR) do
+        csystem "rvm use #{ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+      end
     end
   end
+end
+
+if !first_ruby
+  raise "Couldn't find any Discourse-capable Ruby to run the benchmark..."
 end
 
 # And check to make sure the benchmark actually runs... But just do a few iterations.
