@@ -69,7 +69,7 @@ Dir["#{ENV["HOME"]}/.rvm/rubies/*"].each do |ruby_name|
     if !match_hash.has_key?("discourse") || match_hash["discourse"]
       first_ruby ||= ruby_name  # What's the first comparison Ruby that installs Discourse gems?
       puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
-      Dir.chdir(DISCOURSE_DIR) do
+      Dir.chdir(RAILS_BENCH_DIR) do
         csystem "rvm use #{ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
       end
     end
