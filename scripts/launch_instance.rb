@@ -2,7 +2,7 @@
 
 require "json"
 
-json_out = `aws ec2 run-instances --count 1 --instance-type m4.2xlarge --key-name noah-packer-1 --image-id ami-03ed73f4086c3b4db`
+json_out = `aws ec2 run-instances --count 1 --instance-type m4.2xlarge --key-name noah-packer-1 --placement Tenancy=dedicated --image-id ami-086666f4fee1175fb --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=RailsRubyBenchTestInstance}]'`
 
 ec2_info = JSON.parse(json_out)
 
