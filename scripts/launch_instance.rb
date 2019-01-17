@@ -14,6 +14,6 @@ ec2_info["Instances"].each do |instance|
 
     puts "Launched EC2 instance: #{ec2_type.inspect} / #{id.inspect}"
     puts "ssh -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}"
-    puts "scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}~/rails_ruby_bench/data/*.json ."
-    puts "scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}~/rsb/data/*.json ."
+    puts "scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}:~/rails_ruby_bench/data/*.json ."
+    puts "scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}:~/rsb/data/*.json ."
 end
