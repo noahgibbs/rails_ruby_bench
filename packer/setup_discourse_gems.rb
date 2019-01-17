@@ -70,7 +70,7 @@ Dir["#{ENV["HOME"]}/.rvm/rubies/*"].each do |ruby_name|
       first_ruby ||= ruby_name  # What's the first comparison Ruby that installs Discourse gems?
       puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
       Dir.chdir(RAILS_BENCH_DIR) do
-        csystem "rvm use #{ruby_name} && bundle", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+        csystem "rvm use #{ruby_name} && gem install bundler -v1.17.3 && bundle _1.17.3_", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
       end
     end
   end

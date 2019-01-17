@@ -69,8 +69,8 @@ clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
 
 # Install Discourse gems into RVM-standard Ruby installed for Discourse
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "gem install bundle", "Couldn't install bundler for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
-  csystem "bundle", "Couldn't install Discourse gems for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
+  csystem "gem install bundler -v1.17.3", "Couldn't install bundler for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
+  csystem "bundle _1.17.3_", "Couldn't install Discourse gems for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
 end
 
 if LOCAL
@@ -80,12 +80,12 @@ if LOCAL
 end
 
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "RAILS_ENV=profile bundle exec rake db:create", "Couldn't create Rails database!", :bash => true
-  csystem "RAILS_ENV=profile bundle exec rake db:migrate", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!", :bash => true
+  csystem "RAILS_ENV=profile bundle _1.17.3_ exec rake db:create", "Couldn't create Rails database!", :bash => true
+  csystem "RAILS_ENV=profile bundle _1.17.3_ exec rake db:migrate", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!", :bash => true
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
-    csystem "RAILS_ENV=profile bundle exec rake assets:precompile", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!", :bash => true
+    csystem "RAILS_ENV=profile bundle _1.17.3_ exec rake assets:precompile", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!", :bash => true
   end
   unless File.exists? "public/uploads"
     FileUtils.mkdir "public/uploads"

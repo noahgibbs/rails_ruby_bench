@@ -136,8 +136,8 @@ end
 
 # Install Rails Ruby Bench gems into system Ruby
 Dir.chdir(RAILS_BENCH_DIR) do
-  csystem "gem install bundler", "Couldn't install bundler for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
-  csystem "bundle", "Couldn't install RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
+  csystem "gem install bundler -v1.17.3", "Couldn't install bundler for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
+  csystem "bundle _1.17.3_", "Couldn't install RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
 end
 
 if BUILD_RUBY
@@ -161,20 +161,20 @@ if BUILD_RUBY
         if !bundle_path || bundle_path == ''
           # Okay, so no Bundler is in the path yet. Install the gem.
           puts "No builtin or installed Bundler, installing the gem"
-          csystem "rvm use #{rvm_ruby_name} && gem install bundler", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+          csystem "rvm use #{rvm_ruby_name} && gem install bundler -v1.17.3", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
         end
 
         if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
           which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
           puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
-          csystem "rvm use #{rvm_ruby_name} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+          csystem "rvm use #{rvm_ruby_name} && bundle _1.17.3_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
         end
       end
 
     elsif ruby_hash["rvm_name"]
       csystem "rvm install #{ruby_hash["rvm_name"]}", "Couldn't use RVM to install Ruby named #{ruby_hash["rvm_name"]}!"
       if ruby_hash["discourse"]
-        csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
+        csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle _1.17.3_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
       end
     end
 
@@ -182,7 +182,7 @@ if BUILD_RUBY
 
   puts "Create benchmark_ruby_versions.txt"
   File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
-    rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] }
+    rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] || h["rvm_name"] || h["name"] }
     f.print rubies.join("\n")
   end
 end
@@ -190,7 +190,7 @@ end
 clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
 
 if LOCAL
-  Dir.chdir(DISCOURSE_DIR) { csystem "bundle", "Couldn't install Discourse gems into system Ruby!", :bash => true }
+  Dir.chdir(DISCOURSE_DIR) { csystem "bundle _1.17.3_", "Couldn't install Discourse gems into system Ruby!", :bash => true }
 end
 
 Dir.chdir(RAILS_BENCH_DIR) do
