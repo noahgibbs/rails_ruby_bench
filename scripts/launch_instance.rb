@@ -22,5 +22,5 @@ scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}:~/rails_ruby_bench/data/*.json
 scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}:~/rsb/data/*.json .
 LINES
     puts cmd_lines
-    FILE.open("~/rrb_commands.txt", "w") { |f| f.puts(cmd_lines) }
+    File.open("~/rrb_commands.txt", "w") { |f| f.puts(cmd_lines) }
 end
