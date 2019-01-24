@@ -16,9 +16,15 @@ sudo apt-get update
 
 sudo apt-get install -y passenger
 
-# Locust wants Pip
-sudo apt-get -yqq install python3 python3-pip
-pip3 install locustio
+## Locust wants Pip
+#sudo apt-get -yqq install python3 python3-pip
+#pip3 install locustio
+#
+## JMeter
+#sudo apt-get -yqq install jmeter
 
-# JMeter
-sudo apt-get -yqq install jmeter
+# Wrk
+cd /home/ubuntu
+git clone https://github.com/wg/wrk.git
+cd wrk
+make
