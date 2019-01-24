@@ -23,5 +23,5 @@ scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}:~/rsb/data/*.json .
 aws ec2 terminate-instances --instance-ids #{id}
 LINES
     puts cmd_lines
-    File.open("~/rrb_commands.txt", "w") { |f| f.puts(cmd_lines) }
+    File.open("#{HOME}/rrb_commands.txt", "w") { |f| f.puts(cmd_lines) }
 end
