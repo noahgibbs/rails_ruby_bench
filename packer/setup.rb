@@ -176,7 +176,7 @@ if BUILD_RUBY
       if ruby_hash["discourse"]
         csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle _1.17.3_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
       end
-      csystem "rvm use #{ruby_hash["rvm_name"]} && gem install bundler -v1.17.3"
+      csystem "rvm use #{ruby_hash["rvm_name"]} && gem install bundler -v1.17.3", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["rvm_name"].inspect}!", :bash => true
     end
 
   end
