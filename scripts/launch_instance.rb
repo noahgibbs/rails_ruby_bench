@@ -5,7 +5,7 @@ require "json"
 # While you might get some useful ideas here, this script is *not* general-purpose
 # and will *not* do exactly what you wish it would. It's pretty specific to my workflow.
 
-json_out = `aws ec2 run-instances --count 1 --instance-type m4.2xlarge --key-name noah-packer-1 --placement Tenancy=dedicated --image-id ami-00247b9bfae81953c --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=RailsRubyBenchTestInstance}]'`
+json_out = `aws ec2 run-instances --count 1 --instance-type m4.2xlarge --key-name noah-packer-1 --placement Tenancy=dedicated --image-id ami-0bebde1f9976f51a2 --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=RailsRubyBenchTestInstance}]'`
 
 ec2_info = JSON.parse(json_out)
 
@@ -23,5 +23,5 @@ scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}:~/rsb/data/*.json .
 aws ec2 terminate-instances --instance-ids #{id}
 LINES
     puts cmd_lines
-    File.open("#{HOME}/rrb_commands.txt", "w") { |f| f.puts(cmd_lines) }
+    File.open("#{ENV["HOME"]}/rrb_commands.txt", "w") { |f| f.puts(cmd_lines) }
 end
