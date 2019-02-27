@@ -5,7 +5,10 @@ require "json"
 # While you might get some useful ideas here, this script is *not* general-purpose
 # and will *not* do exactly what you wish it would. It's pretty specific to my workflow.
 
-json_out = `aws ec2 run-instances --count 1 --instance-type m4.2xlarge --key-name noah-packer-1 --placement Tenancy=dedicated --image-id ami-0bebde1f9976f51a2 --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=RailsRubyBenchTestInstance}]'`
+latest_ami = 'ami-048e9903b93415689'
+inst_name = ENV['INSTANCE_NAME'] || 'RailsRubyBenchTestInstance'
+inst_type = ENV['INSTANCE_TYPE'] || 'm4.2xlarge'
+json_out = `aws ec2 run-instances --count 1 --instance-type #{inst_type} --key-name noah-packer-1 --placement Tenancy=dedicated --image-id #{latest_ami} --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=#{inst_name}}]'`
 
 ec2_info = JSON.parse(json_out)
 
