@@ -103,6 +103,13 @@
 	"type": "shell",
 	"inline": "sudo chmod ugo+x /etc/rc.local"
     }, {
+        "type": "file",
+        "source": "90-tune-kernel.conf",
+        "destination": "/tmp/90-tune-kernel.conf"
+    }, {
+        "type": "shell",
+        "inline": "sudo mv /tmp/90-tune-kernel.conf /etc/sysctl.d/"
+    }, {
 	"type": "file",
 	"source": "nginx.default.conf",
 	"destination": "/tmp/nginx.default.conf"
