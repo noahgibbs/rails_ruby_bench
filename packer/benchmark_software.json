@@ -36,6 +36,14 @@
       },
       {
           "rvm_name": "2.6.0"
+      },
+      {
+          "rvm_name": "jruby-9.2.0.0",
+          "discourse": false
+      },
+      {
+          "name": "mri-head",
+          "git_url": "git://github.com/ruby/ruby.git"
       }
   ]
 }
