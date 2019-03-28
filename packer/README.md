@@ -21,6 +21,15 @@ you usually won't want to spend money on a Passenger Enterprise
 license. It's not in the default image, and I can't hand out Passenger
 license codes in any case.
 
+NOTE FOR LATER: Passenger has changed their method of installation
+between Xenial (current) and Bionic (not yet RRB's default.) The
+Passenger Enterprise Install script will need to be updated when we
+move to Bionic.
+
+Xenial: https://www.phusionpassenger.com/docs/advanced_guides/install_and_upgrade/nginx/install/enterprise/xenial.html
+
+Bionic: https://www.phusionpassenger.com/docs/advanced_guides/install_and_upgrade/nginx/install/enterprise/bionic.html
+
 # Installing Packer
 
 Packer is annoyingly unfriendly to most packaging systems. On Linux, they just want you to download and manually install the Packer binary from their site.
