@@ -30,6 +30,6 @@ sudo apt-get install -y nginx-extras passenger-enterprise
 #fi
 #sudo ls /etc/nginx/conf.d/mod-http-passenger.conf
 
-sudo nginx service restart
+sudo service nginx restart
 
 # sudo /usr/bin/passenger-config validate-install
