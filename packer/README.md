@@ -4,6 +4,23 @@ Instead of using a pre-built AMI, you can build your own.
 
 This only builds a combined AMI, with the load-tester, database and Rails server on the same instance. You're welcome to adapt it to other configurations, though, if you'd like to benchmark in that configuration. I'd love a Pull Request!
 
+To build your own AMI, the usual invocation is "packer build ami.json" from this directory.
+
+# Passenger Enterprise
+
+Passenger Enterprise is *not* included in the default ami.json. There
+is a file called ami-with-passenger-enterprise.json. You'll also need
+two more files called passenger-enterprise-license and
+passenger-download-token, with the license and download codes you
+received when you purchased Passenger Enterprise.
+
+If you run this without those codes, you can't build an AMI with
+Passenger Enterprise on it. You shouldn't need a production
+(user-facing) license for this. But given that you're benchmarking,
+you usually won't want to spend money on a Passenger Enterprise
+license. It's not in the default image, and I can't hand out Passenger
+license codes in any case.
+
 # Installing Packer
 
 Packer is annoyingly unfriendly to most packaging systems. On Linux, they just want you to download and manually install the Packer binary from their site.
