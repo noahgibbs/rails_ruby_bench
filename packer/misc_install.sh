@@ -4,7 +4,7 @@ set -e
 
 # To be run as "ubuntu" user w/ sudo access
 
-sudo apt-get -yqq install apache2-utils libjemalloc-dev libtcmalloc-minimal4
+sudo apt-get -yqq install apache2-utils libjemalloc-dev libtcmalloc-minimal4 openjdk-8-jdk
 
 # Passenger install for comparing app servers
 sudo apt-get install -y dirmngr gnupg
