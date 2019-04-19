@@ -29,4 +29,4 @@ git clone https://github.com/wg/wrk.git
 cd wrk
 make
 # Install wrk binary into /usr/local/bin
-sudo cp wrk /usr/local/bin/
+sudo cp wrk /usr/bin/
