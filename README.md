@@ -19,6 +19,10 @@ that gives very consistent benchmark results. It's also annoying for
 some use cases. If you can easily use AWS, I recommend it. For local
 configuration, keep reading.
 
+This benchmark was written and, for the first few years, maintained
+via AppFolio's sponsorship (https://engineering.appfolio.com). Thank
+you AppFolio!
+
 ## Running the Benchmark Locally (Incomplete Version)
 
 If you think your computer is basically set up for Discourse already,
