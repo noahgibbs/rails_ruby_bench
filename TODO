@@ -1,4 +1,4 @@
-Go through a full run of test data, printing out exactly what it does, and find all the problems. Also, view Discourse after a full run and see all the problems.
 
 Explicit JSON-check step at start of Packer build to quickly catch JSON errors in benchmark_software.json
 
+Turn off automatic Ubuntu updates in Packer image: https://libre-software.net/ubuntu-automatic-updates/
