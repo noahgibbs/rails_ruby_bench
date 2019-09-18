@@ -30,20 +30,14 @@ here's the short version of the configuration. Are you worried that
 you may need more software? Scroll down to the complete version of the
 setup below.
 
-Make sure to install the gems:
+Make sure to run:
 
-    $ bundle
+    $ ./bin/setup
+
+That script will install dependencies and Discourse, and then it will try to setup the database for Discourse.
 
 Note that Discourse (at least version 1.8) does not support Postgresql
 10, version 9 is needed.
-
-Then, get Discourse set up:
-
-    $ cd work
-    $ git clone https://github.com/discourse/discourse.git
-    $ cd discourse
-    $ bundle
-    $ RAILS_ENV=profile rake db:create db:migrate  # If necessary, db:drop first
 
 Then, run the database seeding script:
 

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+cd work
+git clone https://github.com/discourse/discourse.git
+cd discourse
+bundle
+RAILS_ENV=profile rake db:create db:migrate  # If necessary, db:drop first
+cd ..
+
+bundle
