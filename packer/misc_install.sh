@@ -16,13 +16,6 @@ sudo apt-get update
 
 sudo apt-get install -y passenger
 
-## Locust wants Pip
-#sudo apt-get -yqq install python3 python3-pip
-#pip3 install locustio
-#
-## JMeter
-#sudo apt-get -yqq install jmeter
-
 # Wrk
 cd /home/ubuntu
 git clone https://github.com/wg/wrk.git
@@ -31,4 +24,6 @@ make
 # Install wrk binary into /usr/local/bin
 sudo cp wrk /usr/bin/
 
+# You know what sucks? Having a huge, benchmark-busting cron job start at
+# a random-ish time, screwing up all your results.
 sudo apt-get remove unattended-upgrades
