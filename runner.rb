@@ -16,8 +16,8 @@ TIMES = 30
 
 # Some potentially useful snippets
 
-WITH_COMPACT="echo GC.compact > ~/rails_ruby_bench/work/discourse/config/initializers/900-gc-compact.rb"
-NO_COMPACT="rm -f ~/rails_ruby_bench/work/discourse/config/initializers/900-gc-compact.rb"
+WITH_COMPACT="export RUBY_COMPACT=YES && echo GC.compact > ~/rails_ruby_bench/work/discourse/config/initializers/900-gc-compact.rb"
+NO_COMPACT="export RUBY_COMPACT=NO && rm -f ~/rails_ruby_bench/work/discourse/config/initializers/900-gc-compact.rb"
 
 # Checked system - error if the command fails
 def csystem(cmd, err, opts = {})
@@ -38,7 +38,7 @@ end
 commands = []
 RUBIES.each do |ruby|
   TESTS.each do |test, test_index|
-    invocation = "rvm use #{ruby} && RUBY_RUNNER_TEST_INDEX=#{test_index} #{test}"
+    invocation = "rvm use #{ruby} && export RUBY_RUNNER_TEST_INDEX=#{test_index} && #{test}"
     commands.concat([invocation] * TIMES)
   end
 end
