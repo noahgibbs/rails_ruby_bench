@@ -26,4 +26,4 @@ sudo cp wrk /usr/bin/
 
 # You know what sucks? Having a huge, benchmark-busting cron job start at
 # a random-ish time, screwing up all your results.
-sudo apt-get remove unattended-upgrades
+sudo apt-get remove -y unattended-upgrades
