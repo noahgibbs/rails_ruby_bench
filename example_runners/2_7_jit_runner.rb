@@ -32,9 +32,9 @@ end
 commands = []
 RUBIES.each do |ruby|
   TESTS.each_with_index do |test, test_index|
-    # For JIT, set RUBYOPT to turn JIT on. For either JIT or non-JIT, set a RUBY_WITH_JIT variable that gets picked up in 'environment' because it has RUBY in the name.
-    invocation_jit = "rvm use #{ruby} && export RUBY_WITH_JIT=YES && export RUBYOPT='--jit' && export RUBY_RUNNER_TEST_INDEX=#{test_index} && #{test}"
-    invocation_no_jit = "rvm use #{ruby} && export RUBY_WITH_JIT=NO && export RUBY_RUNNER_TEST_INDEX=#{test_index} && #{test}"
+    # For JIT, set RUBYOPT to turn JIT on. For either JIT or non-JIT, set a RRB_WITH_JIT variable that gets picked up in 'environment' because it has RUBY in the name.
+    invocation_jit = "rvm use #{ruby} && export RRB_WITH_JIT=YES && export RUBYOPT='--jit' && export RRB_RUNNER_TEST_INDEX=#{test_index} && #{test}"
+    invocation_no_jit = "rvm use #{ruby} && export RRB_WITH_JIT=NO && export RRB_RUNNER_TEST_INDEX=#{test_index} && #{test}"
     commands.concat([invocation_no_jit,invocation_jit] * TIMES)
   end
 end
