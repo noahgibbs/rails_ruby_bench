@@ -26,10 +26,11 @@ def csystem(cmd, err = nil, opts = {})
 end
 
 Dir.chdir("/home/ubuntu/rails_ruby_bench/work/mri-head") do
-  csystem("git pull")
+  csystem("git checkout trunk && git pull")
   csystem("git checkout #{SHA}")
   #csystem("autoconf")
+  csystem("make clean")
   csystem("./configure --prefix=#{INSTALL_DIR}")
-  csystem("make clean && make && make install")
+  csystem("make && make install")
   csystem("rvm mount #{INSTALL_DIR} -n mri-head-#{SHORT_SHA}")
 end
