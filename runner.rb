@@ -43,7 +43,7 @@ RUBIES.each do |ruby|
   end
 end
 
-rand_commands = commands.sample(commands.size)
+rand_commands = commands.shuffle
 
 rand_commands.each do |command|
   csystem(command, "Error running test!", bash: true, to_console: true)
