@@ -11,7 +11,7 @@ require "fileutils"
 
 SHA = ARGV[0]
 SHORT_SHA = SHA[0..5]
-INSTALL_DIR = "/home/ubuntu/install/mri-head-#{SHA}"
+INSTALL_DIR = "/home/ubuntu/install/mri-head-#{SHORT_SHA}"
 FileUtils.mkdir_p INSTALL_DIR
 
 # Checked system - error if the command fails
@@ -21,7 +21,6 @@ def csystem(cmd, err = nil, opts = {})
   system(cmd, out: $stdout, err: :out)
   unless $?.success?
     puts "Error running command:\n#{cmd.inspect}"
-    puts "Output:\n#{out}\n=====" if out
     raise (err || "Error running command #{cmd.inspect}")
   end
 end
@@ -29,6 +28,7 @@ end
 Dir.chdir("/home/ubuntu/rails_ruby_bench/work/mri-head") do
   csystem("git pull")
   csystem("git checkout #{SHA}")
+  #csystem("autoconf")
   csystem("./configure --prefix=#{INSTALL_DIR}")
   csystem("make clean && make && make install")
   csystem("rvm mount #{INSTALL_DIR} -n mri-head-#{SHORT_SHA}")
