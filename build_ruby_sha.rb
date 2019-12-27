@@ -7,20 +7,22 @@ if ARGV.size != 1
   raise "Error - provide exactly one SHA as the only argument!"
 end
 
+require "fileutils"
+
 SHA = ARGV[0]
 SHORT_SHA = SHA[0..5]
 INSTALL_DIR = "/home/ubuntu/install/mri-head-#{SHA}"
-File.mkdir_p INSTALL_DIR
+FileUtils.mkdir_p INSTALL_DIR
 
 # Checked system - error if the command fails
 def csystem(cmd, err = nil, opts = {})
   #cmd = "bash -l -c \"#{cmd}\"" if opts[:bash] || opts["bash"]
   print "Running command: #{cmd.inspect}\n"
   system(cmd, out: $stdout, err: :out)
-  unless $?.success? # || opts[:fail_ok] || opts["fail_ok"]
+  unless $?.success?
     puts "Error running command:\n#{cmd.inspect}"
     puts "Output:\n#{out}\n=====" if out
-    raise (err || "Error running command #{cmd.inspect}"
+    raise (err || "Error running command #{cmd.inspect}")
   end
 end
 
