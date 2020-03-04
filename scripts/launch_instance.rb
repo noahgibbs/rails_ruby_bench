@@ -9,7 +9,7 @@ latest_ami = 'ami-0bca9c583e83ac8e8'  # This is in us-west-2
 inst_name = ENV['INSTANCE_NAME'] || 'RailsRubyBenchTestInstance'
 inst_type = ENV['INSTANCE_TYPE'] || 'm4.2xlarge'
 placement = ENV['PLACEMENT'] ? "--placement #{ENV['PLACEMENT']}" : "" # --placement Tenancy=dedicated
-json_out = `aws ec2 run-instances --count 1 --instance-type #{inst_type} --key-name noah-packer-1 #{placement} --image-id #{latest_ami} --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=#{inst_name}}]'`
+json_out = `aws ec2 run-instances --count 1 --instance-type #{inst_type} --key-name rrb-1 #{placement} --image-id #{latest_ami} --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=#{inst_name}}]'`
 
 ec2_info = JSON.parse(json_out)
 
