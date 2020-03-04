@@ -22,9 +22,9 @@ ec2_info["Instances"].each do |instance|
 
     puts "Launched EC2 instance: #{ec2_type.inspect} / #{id.inspect}"
     cmd_lines = <<LINES
-ssh -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}
-scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}:~/rails_ruby_bench/data/*.json .
-scp -i ~/.ssh/noah-packer-1.pem ubuntu@#{inst_ip}:~/rsb/data/*.json .
+ssh -i ~/.ssh/rrb-1.pem ubuntu@#{inst_ip}
+scp -i ~/.ssh/rrb-1.pem ubuntu@#{inst_ip}:~/rails_ruby_bench/data/*.json .
+scp -i ~/.ssh/rrb-1.pem ubuntu@#{inst_ip}:~/rsb/data/*.json .
 aws ec2 terminate-instances --instance-ids #{id}
 LINES
     puts cmd_lines
