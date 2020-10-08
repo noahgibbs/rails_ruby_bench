@@ -5,7 +5,7 @@ require "json"
 # While you might get some useful ideas here, this script is *not* general-purpose
 # and will *not* do exactly what you wish it would. It's pretty specific to my workflow.
 
-latest_ami = 'ami-0bca9c583e83ac8e8'  # This is in us-west-2
+latest_ami = 'ami-0e7a9d0f34bbb44e9'
 inst_name = ENV['INSTANCE_NAME'] || 'RailsRubyBenchTestInstance'
 inst_type = ENV['INSTANCE_TYPE'] || 'm4.2xlarge'
 placement = ENV['PLACEMENT'] ? "--placement #{ENV['PLACEMENT']}" : "" # --placement Tenancy=dedicated
