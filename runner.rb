@@ -15,7 +15,6 @@ TESTS = [
 TIMES = 30
 
 # Some potentially useful snippets
-
 WITH_COMPACT="export RUBY_COMPACT=YES && echo GC.compact > ~/rails_ruby_bench/work/discourse/config/initializers/900-gc-compact.rb"
 NO_COMPACT="export RUBY_COMPACT=NO && rm -f ~/rails_ruby_bench/work/discourse/config/initializers/900-gc-compact.rb"
 
@@ -48,3 +47,5 @@ rand_commands = commands.shuffle
 rand_commands.each do |command|
   csystem(command, "Error running test!", bash: true, to_console: true)
 end
+
+csystem("touch #{ENV["HOME"]}/run_finished.txt", "Error creating run-finished file!", bash: false, to_console: true)
