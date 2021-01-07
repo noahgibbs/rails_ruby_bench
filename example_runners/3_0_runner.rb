@@ -42,7 +42,7 @@ RUBIES.each do |ruby|
   TESTS.each_with_index do |test, test_index|
     if ruby["2.7.0"] || ruby["3.0"]
       jit_invocation = "rvm use #{ruby} && export RRB_WITH_JIT=YES && export RUBY_RUNNER_TEST_INDEX=#{test_index} && #{test}"
-      no_jit_invocation = "rvm use #{ruby} && export RRB_WITH_JIT=YES && export RUBY_RUNNER_TEST_INDEX=#{test_index} && #{test}"
+      no_jit_invocation = "rvm use #{ruby} && export RRB_WITH_JIT=NO && export RUBY_RUNNER_TEST_INDEX=#{test_index} && #{test}"
       commands.concat([jit_invocation, no_jit_invocation] * TIMES)
     else
       invocation = "rvm use #{ruby} && export RUBY_RUNNER_TEST_INDEX=#{test_index} && #{test}"
