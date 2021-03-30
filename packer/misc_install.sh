@@ -16,14 +16,14 @@ sudo apt-get -yqq install apache2-utils libjemalloc-dev libtcmalloc-minimal4 ope
 #
 #sudo apt-get install -y passenger
 
-# Wrk
-cd /home/ubuntu
-sudo apt-get install -yqq unzip
-git clone https://github.com/wg/wrk.git
-cd wrk
-make
-# Install wrk binary into /usr/local/bin
-sudo cp wrk /usr/bin/
+# Wrk - for whatever reason, wrk seems to take a shockingly long time to build - commenting it out.
+#cd /home/ubuntu
+#sudo apt-get install -yqq unzip
+#git clone https://github.com/wg/wrk.git
+#cd wrk
+#make
+## Install wrk binary into /usr/local/bin
+#sudo cp wrk /usr/bin/
 
 # You know what sucks? Having a huge, benchmark-busting cron job start at
 # a random-ish time, screwing up all your results.
