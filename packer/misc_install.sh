@@ -18,6 +18,7 @@ sudo apt-get -yqq install apache2-utils libjemalloc-dev libtcmalloc-minimal4 ope
 
 # Wrk
 cd /home/ubuntu
+sudo apt-get install -yqq unzip
 git clone https://github.com/wg/wrk.git
 cd wrk
 make
