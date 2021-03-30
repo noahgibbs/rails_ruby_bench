@@ -130,43 +130,39 @@ Dir.chdir(RAILS_BENCH_DIR) do
   csystem "rm Gemfile.lock && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
 end
 
-if BUILD_RUBY
-  benchmark_software["compare_rubies"].each do |ruby_hash|
-    puts "Installing Ruby: #{ruby_hash.inspect}"
-    # Clone the Ruby, then build and mount if necessary
-    if ruby_hash["git_url"]
-      work_dir = File.join(RAILS_BENCH_DIR, "work", ruby_hash["name"])
-      ruby_hash["checkout_dir"] = work_dir
-      clone_or_update_ruby_by_json(ruby_hash, work_dir)
+benchmark_software["compare_rubies"].each do |ruby_hash|
+  puts "Installing Ruby: #{ruby_hash.inspect}"
+  # Clone the Ruby, then build and mount if necessary
+  if ruby_hash["git_url"]
+    work_dir = File.join(RAILS_BENCH_DIR, "work", ruby_hash["name"])
+    ruby_hash["checkout_dir"] = work_dir
+    clone_or_update_ruby_by_json(ruby_hash, work_dir)
 
-      puts "Mount the built Ruby: #{ruby_hash.inspect}"
+    puts "Mount the built Ruby: #{ruby_hash.inspect}"
 
-      ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
-      Dir.chdir(RAILS_BENCH_DIR) do
-        csystem "rbenv shell #{ruby_name} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+    ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
+    Dir.chdir(RAILS_BENCH_DIR) do
+      csystem "rbenv shell #{ruby_name} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
 
-        if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
-          which_bundle = last_line_with_ruby("which bundle", ruby_name)
-          puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
-          csystem "rbenv shell #{ruby_name} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
-        end
+      if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
+        which_bundle = last_line_with_ruby("which bundle", ruby_name)
+        puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
+        csystem "rbenv shell #{ruby_name} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
       end
-
-    elsif ruby_hash["ruby_build_name"]
-      csystem "ruby-build #{ruby_hash["ruby_build_name"]}", "Couldn't use rbenv/ruby-build to install Ruby named #{ruby_hash["ruby_build_name"]}!"
-      if ruby_hash["discourse"]
-        csystem "rbenv shell #{ruby_hash["ruby_build_name"]} && cd #{RAILS_BENCH_DIR} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby-Build-installed Ruby #{ruby_hash["ruby_build_name"]}!", :bash => true
-      end
-      csystem "rbenv shell #{ruby_hash["ruby_build_name"]} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["ruby_build_name"].inspect}!", :bash => true
     end
 
+  elsif ruby_hash["ruby_build_name"]
+    csystem "ruby-build #{ruby_hash["ruby_build_name"]}", "Couldn't use rbenv/ruby-build to install Ruby named #{ruby_hash["ruby_build_name"]}!"
+    if ruby_hash["discourse"]
+      csystem "rbenv shell #{ruby_hash["ruby_build_name"]} && cd #{RAILS_BENCH_DIR} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby-Build-installed Ruby #{ruby_hash["ruby_build_name"]}!", :bash => true
+    end
+    csystem "rbenv shell #{ruby_hash["ruby_build_name"]} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["ruby_build_name"].inspect}!", :bash => true
   end
 
-  puts "Create benchmark_ruby_versions.txt"
-  File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
-    rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] || h["ruby_build_name"] || h["name"] }
-    f.print rubies.join("\n")
-  end
+puts "Create benchmark_ruby_versions.txt"
+File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
+  rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] || h["ruby_build_name"] || h["name"] }
+  f.print rubies.join("\n")
 end
 
 clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
