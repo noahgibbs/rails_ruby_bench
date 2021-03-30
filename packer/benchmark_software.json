@@ -9,29 +9,13 @@
   },
   "compare_rubies": [
       {
-          "rvm_name": "2.0.0-p0",
-          "discourse": false
-      },
-      {
-          "rvm_name": "2.1.10",
-          "discourse": false
-      },
-      {
-          "rvm_name": "2.2.10",
-          "discourse": false
-      },
-      {
-          "rvm_name": "2.3.8",
-          "discourse": false
-      },
-      {
-          "rvm_name": "2.4.5"
-      },
-      {
           "rvm_name": "2.5.3"
       },
       {
           "rvm_name": "2.6.0"
+      },
+      {
+          "rvm_name": "3.0.0"
       }
   ]
 }
