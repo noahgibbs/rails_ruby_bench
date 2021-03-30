@@ -48,6 +48,9 @@
         "destination": "/home/ubuntu/benchmark_software.json"
     }, {
         "type": "shell",
+        "inline": "sudo -u postgres createuser -s ubuntu"
+    }, {
+        "type": "shell",
         "execute_command": "cd /home/ubuntu; {{ .Vars }} /home/ubuntu/.rbenv/shims/ruby {{ .Path }}",
         "script": "setup_discourse.rb"
     }, {
