@@ -10,7 +10,7 @@
         "secret_key": "{{user `aws_secret_key`}}",
         "region": "us-east-1",
         "source_ami": "ami-04cc2b0ad9e30a9c8",
-        "instance_type": "t3.micro",
+        "instance_type": "t2.small",
         "ssh_username": "ubuntu",
         "ami_name": "rails-ruby-benchmark {{timestamp}}",
         "run_tags": {
@@ -61,14 +61,14 @@
         "script": "misc_install.sh"
     }, {
         "type": "shell",
-        "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} /home/ubuntu/.rbenv/shims/ruby {{ .Path }}",
+        "execute_command": "cd /home/ubuntu; {{ .Vars }} /home/ubuntu/.rbenv/shims/ruby {{ .Path }}",
         "script": "setup.rb"
     }, {
         "type": "shell",
         "inline": "[ -f /tmp/setup_ran_correctly ] || (echo 'Setup.rb failed to run to completion...'; exit 1)  # Make sure setup.rb ran correctly"
     }, {
         "type": "shell",
-        "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} /home/ubuntu/.rbenv/shims/ruby {{ .Path }}",
+        "execute_command": "cd /home/ubuntu; {{ .Vars }} /home/ubuntu/.rbenv/shims/ruby {{ .Path }}",
         "script": "setup_discourse_gems.rb"
     }, {
         "type": "shell",
