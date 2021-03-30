@@ -7,6 +7,9 @@
       "git_url": "https://github.com/discourse/discourse.git",
       "git_tag": "v2.6.3"
   },
+  "bundler": {
+      "version": "2.2.15"
+  },
   "compare_rubies": [
       {
           "rvm_name": "2.5.3"

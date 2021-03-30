@@ -3,15 +3,10 @@
 require "fileutils"
 require "json"
 
-# Pass --local to run the setup on a local machine, or set RRB_LOCAL
-LOCAL = (ARGV.delete '--local') || ENV["RRB_LOCAL"]
-# Whether to build rubies with rvm
-BUILD_RUBY = !LOCAL
-USE_BASH = BUILD_RUBY
 # Print all commands and show their full output
-VERBOSE = LOCAL
+VERBOSE = true
 
-base = LOCAL ? File.expand_path('..', __FILE__) : "/home/ubuntu"
+base = "/home/ubuntu"
 benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 
 RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
@@ -20,6 +15,7 @@ RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
 DISCOURSE_DIR = ENV["DISCOURSE_DIR"] || File.join(__dir__, "work", "discourse")
 DISCOURSE_URL = ENV["DISCOURSE_URL"] || benchmark_software["discourse"]["git_url"]
 DISCOURSE_TAG = ENV["DISCOURSE_TAG"] || benchmark_software["discourse"]["git_tag"]
+BUNDLER_VERSION = benchmark_software["bundler"]["version"]
 
 class SystemPackerBuildError < RuntimeError; end
 
@@ -118,11 +114,7 @@ def last_line_with_ruby(cmd, ruby)
   output.split("\n").compact[-1]
 end
 
-if LOCAL
-  RAILS_BENCH_DIR = File.expand_path("../..", __FILE__)
-else
-  RAILS_BENCH_DIR = File.join(Dir.pwd, "rails_ruby_bench")
-end
+RAILS_BENCH_DIR = File.join(Dir.pwd, "rails_ruby_bench")
 
 # Cloned in ami.json, but go ahead and update anyway. This shouldn't normally do anything.
 if RAILS_RUBY_BENCH_URL && RAILS_RUBY_BENCH_URL.strip != ""
@@ -136,8 +128,8 @@ end
 
 # Install Rails Ruby Bench gems into system Ruby
 Dir.chdir(RAILS_BENCH_DIR) do
-  csystem "gem install bundler -v1.17.3", "Couldn't install bundler for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
-  csystem "bundle _1.17.3_", "Couldn't install RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
+  csystem "gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install bundler for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
+  csystem "bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
 end
 
 if BUILD_RUBY
@@ -161,22 +153,22 @@ if BUILD_RUBY
         if !bundle_path || bundle_path == ''
           # Okay, so no Bundler is in the path yet. Install the gem.
           puts "No builtin or installed Bundler, installing the gem"
-          csystem "rvm use #{rvm_ruby_name} && gem install bundler -v1.17.3", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+          csystem "rvm use #{rvm_ruby_name} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
         end
 
         if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
           which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
           puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
-          csystem "rvm use #{rvm_ruby_name} && bundle _1.17.3_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+          csystem "rvm use #{rvm_ruby_name} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
         end
       end
 
     elsif ruby_hash["rvm_name"]
       csystem "rvm install #{ruby_hash["rvm_name"]}", "Couldn't use RVM to install Ruby named #{ruby_hash["rvm_name"]}!"
       if ruby_hash["discourse"]
-        csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle _1.17.3_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
+        csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
       end
-      csystem "rvm use #{ruby_hash["rvm_name"]} && gem install bundler -v1.17.3", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["rvm_name"].inspect}!", :bash => true
+      csystem "rvm use #{ruby_hash["rvm_name"]} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["rvm_name"].inspect}!", :bash => true
     end
 
   end
@@ -189,10 +181,6 @@ if BUILD_RUBY
 end
 
 clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
-
-if LOCAL
-  Dir.chdir(DISCOURSE_DIR) { csystem "bundle _1.17.3_", "Couldn't install Discourse gems into system Ruby!", :bash => true }
-end
 
 Dir.chdir(RAILS_BENCH_DIR) do
   # If there are already users added, this should exit without error and not change the database

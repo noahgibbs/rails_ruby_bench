@@ -4,7 +4,6 @@ require "fileutils"
 require "json"
 
 # Print all commands and show their full output
-#VERBOSE = LOCAL
 VERBOSE = true
 
 base = "/home/ubuntu"
@@ -34,12 +33,10 @@ def csystem(cmd, err, opts = {})
   end
 end
 
-if LOCAL
-  RAILS_BENCH_DIR = File.expand_path("../..", __FILE__)
-else
-  RAILS_BENCH_DIR = File.join(Dir.pwd, "rails_ruby_bench")
-end
+RAILS_BENCH_DIR = File.join(Dir.pwd, "rails_ruby_bench")
 DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
+
+BUNDLER_VERSION = benchmark_software["bundler"]["version"]
 
 # Installing the Discourse gems takes awhile. Like, a *long*
 # while. And Packer turns out to have a bug where a step that takes
@@ -65,7 +62,7 @@ Dir["#{ENV["HOME"]}/.rvm/rubies/*"].each do |ruby_name|
       first_ruby ||= ruby_name  # What's the first comparison Ruby that installs Discourse gems?
       puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
       Dir.chdir(RAILS_BENCH_DIR) do
-        csystem "rvm use #{ruby_name} && gem install bundler -v1.17.3 && bundle _1.17.3_", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+        csystem "rvm use #{ruby_name} && gem install bundler -v#{BUNDLER_VERSION} && bundle _#{BUNDLER_VERSION}_", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
       end
     end
   end

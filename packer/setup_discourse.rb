@@ -11,6 +11,7 @@ benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 
 DISCOURSE_GIT_URL    = benchmark_software["discourse"]["git_url"]
 DISCOURSE_TAG        = benchmark_software["discourse"]["git_tag"]
+BUNDLER_VERSION      = benchmark_software["bundler"]["version"]
 
 class SystemPackerBuildError < RuntimeError; end
 
@@ -58,25 +59,18 @@ DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
 
-# Install Discourse gems into RVM-standard Ruby installed for Discourse
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "gem install bundler -v1.17.3", "Couldn't install bundler for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
-  csystem "bundle _1.17.3_", "Couldn't install Discourse gems for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
-end
-
-if LOCAL
-  puts "\nIf not done already, you should setup the dependencies for Discourse: redis, postgres and node"
-  puts "https://github.com/discourse/discourse/blob/v1.8.0.beta13/docs/DEVELOPER-ADVANCED.md#preparing-a-fresh-ubuntu-install"
-  puts
+  csystem "gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install bundler for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
+  csystem "bundle _#{BUNDLER_VERSION}_", "Couldn't install Discourse gems for #{DISCOURSE_DIR} for Discourse's system Ruby!", :bash => true
 end
 
 Dir.chdir(DISCOURSE_DIR) do
-  csystem "RAILS_ENV=profile bundle _1.17.3_ exec rake db:create", "Couldn't create Rails database!", :bash => true
-  csystem "RAILS_ENV=profile bundle _1.17.3_ exec rake db:migrate", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!", :bash => true
+  csystem "RAILS_ENV=profile bundle _#{BUNDLER_VERSION}_ exec rake db:create", "Couldn't create Rails database!", :bash => true
+  csystem "RAILS_ENV=profile bundle _#{BUNDLER_VERSION}_ exec rake db:migrate", "Failed running 'rake db:migrate' in #{DISCOURSE_DIR}!", :bash => true
 
   # TODO: use a better check for whether to rebuild precompiled assets
   unless File.exists? "public/assets"
-    csystem "RAILS_ENV=profile bundle _1.17.3_ exec rake assets:precompile", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!", :bash => true
+    csystem "RAILS_ENV=profile bundle _#{BUNDLER_VERSION}_ exec rake assets:precompile", "Failed running 'rake assets:precompile' in #{DISCOURSE_DIR}!", :bash => true
   end
   unless File.exists? "public/uploads"
     FileUtils.mkdir "public/uploads"

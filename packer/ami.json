@@ -9,7 +9,7 @@
         "access_key": "{{user `aws_access_key`}}",
         "secret_key": "{{user `aws_secret_key`}}",
         "region": "us-east-1",
-        "source_ami": "ami-263d0b5c",
+        "source_ami": "ami-04cc2b0ad9e30a9c8",
         "instance_type": "t3.micro",
         "ssh_username": "ubuntu",
         "ami_name": "rails-ruby-benchmark {{timestamp}}",
@@ -48,7 +48,6 @@
         "destination": "/home/ubuntu/benchmark_software.json"
     }, {
         "type": "shell",
-        "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} ruby {{ .Path }}",
         "script": "setup_discourse.rb"
     }, {
         "type": "shell",
@@ -62,7 +61,6 @@
             "RAILS_RUBY_BENCH_URL=https://github.com/noahgibbs/rails_ruby_bench.git",
             "RAILS_RUBY_BENCH_TAG="
         ],
-        "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} ruby {{ .Path }}",
         "script": "setup.rb"
     }, {
         "type": "shell",
