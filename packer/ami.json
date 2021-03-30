@@ -48,6 +48,7 @@
         "destination": "/home/ubuntu/benchmark_software.json"
     }, {
         "type": "shell",
+        "execute_command": "cd /home/ubuntu; {{ .Vars }} /home/ubuntu/.rbenv/shims/ruby {{ .Path }}",
         "script": "setup_discourse.rb"
     }, {
         "type": "shell",
@@ -67,7 +68,7 @@
         "inline": "[ -f /tmp/setup_ran_correctly ] || (echo 'Setup.rb failed to run to completion...'; exit 1)  # Make sure setup.rb ran correctly"
     }, {
         "type": "shell",
-        "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} ruby {{ .Path }}",
+        "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} /home/ubuntu/.rbenv/shims/ruby {{ .Path }}",
         "script": "setup_discourse_gems.rb"
     }, {
         "type": "shell",

@@ -8,7 +8,7 @@
       "git_tag": "v2.6.3"
   },
   "bundler": {
-      "version": "2.2.15"
+      "version": "2.1.4"
   },
   "compare_rubies": [
       {
