@@ -81,8 +81,6 @@ def build_and_mount_ruby(source_dir, prefix_dir, mount_name, options = {})
     # This should install to the benchmark ruby dir
     csystem "make install", "Installing Ruby failed in #{source_dir}!"
   end
-  csystem "rvm mount #{prefix_dir} -n #{mount_name}", "Couldn't mount #{source_dir.inspect} as #{mount_name}!", :bash => true
-  csystem "rvm use --default ext-#{mount_name}", "Couldn't set ext-#{mount_name} to rvm default!", :bash => true
 end
 
 def autogen_name
@@ -94,19 +92,19 @@ end
 
 def clone_or_update_ruby_by_json(h, work_dir)
   clone_or_update_by_json(h, work_dir)
-  mount_name = h["name"] || autogen_name
-  prefix_dir = h["prefix_dir"] || File.join(RAILS_BENCH_DIR, "work", "prefix", mount_name.gsub("/", "_"))
+  mount_name = h["name"] ? h["name"].gsub("/", "_") : autogen_name
+  prefix_dir = h["prefix_dir"] || File.join(ENV["HOME"], ".rbenv", "versions", mount_name)
 
   build_and_mount_ruby(h["checkout_dir"], prefix_dir, mount_name, { "configure_options" => h["configure_options"] || "" } )
-  h["mount_name"] = "ext-" + mount_name
+  h["mount_name"] = mount_name
 end
 
-# When you run with "rvm use", you wind up with a bunch of extra
-# output that you usually don't want.  You need to cut out just the
+# When you run with "rbenv shell", you wind up with a bunch of extra
+# output that you usually don't want (note: CHECK THIS.)  You need to cut out just the
 # last line, remove extraneous newlines, make sure .bash_profile has
 # been sourced...
 def last_line_with_ruby(cmd, ruby)
-  output = `bash -l -c \"rvm use #{ruby} && #{cmd}\"`
+  output = `bash -l -c \"rbenv shell #{ruby} && #{cmd}\"`
   unless $?.success?
     puts "Something went wrong running command, returning nil... #{$?.inspect} / #{cmd.inspect}"
     return nil
@@ -141,41 +139,32 @@ if BUILD_RUBY
       ruby_hash["checkout_dir"] = work_dir
       clone_or_update_ruby_by_json(ruby_hash, work_dir)
 
-      #csystem "rvm list #2", "Error running rvm list [2] on Ruby #{ruby_hash.inspect}!", :debug => true
       puts "Mount the built Ruby: #{ruby_hash.inspect}"
 
-      rvm_ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
+      ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
       Dir.chdir(RAILS_BENCH_DIR) do
-        # In Ruby 2.6.0preview3 and later, Bundler is installed as part of Ruby. Check if that's present.
-        bundle_path = last_line_with_ruby("which bundle", rvm_ruby_name)
-
-        puts "Checking bundler path: #{bundle_path.inspect}"
-        if !bundle_path || bundle_path == ''
-          # Okay, so no Bundler is in the path yet. Install the gem.
-          puts "No builtin or installed Bundler, installing the gem"
-          csystem "rvm use #{rvm_ruby_name} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
-        end
+        csystem "rbenv shell #{ruby_name} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
 
         if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
-          which_bundle = last_line_with_ruby("which bundle", rvm_ruby_name)
+          which_bundle = last_line_with_ruby("which bundle", ruby_name)
           puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
-          csystem "rvm use #{rvm_ruby_name} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{rvm_ruby_name.inspect}!", :bash => true
+          csystem "rbenv shell #{ruby_name} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
         end
       end
 
-    elsif ruby_hash["rvm_name"]
-      csystem "rvm install #{ruby_hash["rvm_name"]}", "Couldn't use RVM to install Ruby named #{ruby_hash["rvm_name"]}!"
+    elsif ruby_hash["ruby_build_name"]
+      csystem "ruby-build #{ruby_hash["ruby_build_name"]}", "Couldn't use rbenv/ruby-build to install Ruby named #{ruby_hash["ruby_build_name"]}!"
       if ruby_hash["discourse"]
-        csystem "rvm use #{ruby_hash["rvm_name"]} && cd #{RAILS_BENCH_DIR} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for RVM-installed Ruby #{ruby_hash["rvm_name"]}!", :bash => true
+        csystem "rbenv shell #{ruby_hash["ruby_build_name"]} && cd #{RAILS_BENCH_DIR} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby-Build-installed Ruby #{ruby_hash["ruby_build_name"]}!", :bash => true
       end
-      csystem "rvm use #{ruby_hash["rvm_name"]} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["rvm_name"].inspect}!", :bash => true
+      csystem "rbenv shell #{ruby_hash["ruby_build_name"]} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["ruby_build_name"].inspect}!", :bash => true
     end
 
   end
 
   puts "Create benchmark_ruby_versions.txt"
   File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
-    rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] || h["rvm_name"] || h["name"] }
+    rubies = benchmark_software["compare_rubies"].map { |h| h["mount_name"] || h["name"] || h["ruby_build_name"] || h["name"] }
     f.print rubies.join("\n")
   end
 end

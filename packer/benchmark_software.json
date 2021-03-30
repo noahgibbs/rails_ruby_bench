@@ -12,13 +12,13 @@
   },
   "compare_rubies": [
       {
-          "rvm_name": "2.5.3"
+          "ruby_build_name": "2.6.0"
       },
       {
-          "rvm_name": "2.6.0"
+          "ruby_build_name": "2.7.0"
       },
       {
-          "rvm_name": "3.0.0"
+          "ruby_build_name": "3.0.0"
       }
   ]
 }
