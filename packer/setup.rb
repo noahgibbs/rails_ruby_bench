@@ -127,7 +127,7 @@ end
 # Install Rails Ruby Bench gems into system Ruby
 Dir.chdir(RAILS_BENCH_DIR) do
   csystem "gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install bundler for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
-  csystem "bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
+  csystem "rm Gemfile.lock && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems for #{RAILS_BENCH_DIR} for system Ruby!", :bash => true
 end
 
 if BUILD_RUBY

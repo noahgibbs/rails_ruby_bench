@@ -1,7 +1,7 @@
 {
   "rails_ruby_bench": {
       "git_url": "https://github.com/noahgibbs/rails_ruby_bench.git",
-      "git_tag": ""
+      "git_tag": "update_everything"
   },
   "discourse": {
       "git_url": "https://github.com/discourse/discourse.git",
