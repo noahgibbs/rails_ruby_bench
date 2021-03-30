@@ -9,13 +9,13 @@
         "access_key": "{{user `aws_access_key`}}",
         "secret_key": "{{user `aws_secret_key`}}",
         "region": "us-east-1",
-        "source_ami": "ami-263d0b5c",
-        "instance_type": "t2.small",
+        "source_ami": "ami-0adb6517915458bdb",
+        "instance_type": "t3.micro",
         "ssh_username": "ubuntu",
         "ami_name": "rails-ruby-benchmark {{timestamp}}",
-	"run_tags": {
-	    "Name": "Packer RailsRubyBench Builder{{user `builder_suffix`}}"
-	},
+        "run_tags": {
+            "Name": "Packer RailsRubyBench Builder{{user `builder_suffix`}}"
+        },
         "launch_block_device_mappings": [
           {
             "device_name": "/dev/sda1",
@@ -31,36 +31,21 @@
             "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done"
         ]
     }, {
-	"type": "file",
-	"source": "ami.json",
-	"destination": "/tmp/ami.json"
-    }, {
-        "type": "shell",
-	"inline": "sudo mv /tmp/ami.json /home/ubuntu/ami.json"
+        "type": "file",
+        "source": "ami.json",
+        "destination": "/home/ubuntu/ami.json"
     }, {
         "type": "shell",
         "script": "discourse_install.sh"
     }, {
         "type": "shell",
-        "execute_command": "{{ .Vars }} /bin/bash -e -l {{ .Path }}",
-        "script": "discourse_install_rvm.sh"
+        "inline": [
+            "cd /home/ubuntu && git clone https://github.com/noahgibbs/rails_ruby_bench.git && git clone https://github.com/noahgibbs/rsb.git"
+        ]
     }, {
-        "type": "shell",
-        "execute_command": "{{ .Vars }} /bin/bash -e -l {{ .Path }}",
-        "script": "discourse_install_node.sh"
-    }, {
-        "type": "shell",
-        "execute_command": "chmod +x {{ .Path }}; sudo su postgres -c '{{ .Vars }} {{ .Path }}'",
-        "script": "discourse_install_postgres.sh"
-    }, {
-        "type": "shell",
-	"inline": [
-	    "cd /home/ubuntu && git clone https://github.com/noahgibbs/rails_ruby_bench.git && git clone https://github.com/noahgibbs/rsb.git"
-	]
-    }, {
-	"type": "file",
-	"source": "benchmark_software.json",
-	"destination": "/home/ubuntu/benchmark_software.json"
+        "type": "file",
+        "source": "benchmark_software.json",
+        "destination": "/home/ubuntu/benchmark_software.json"
     }, {
         "type": "shell",
         "execute_command": "cd /home/ubuntu; . .rvm/scripts/rvm; {{ .Vars }} ruby {{ .Path }}",
@@ -90,32 +75,12 @@
         "type": "shell",
         "inline": "[ -f /tmp/setup_discourse_gems_ran_correctly ] || (echo 'Setup_discourse.rb failed to run to completion...'; exit 1)  # Make sure setup_discourse_gems.rb ran correctly"
     }, {
-        "type": "shell",
-        "script": "nginx_install.sh"
-    }, {
-	"type": "file",
-	"source": "rc.local",
-	"destination": "/tmp/rc.local"
-    }, {
-        "type": "shell",
-	"inline": "sudo mv /tmp/rc.local /etc/rc.local"
-    }, {
-	"type": "shell",
-	"inline": "sudo chmod ugo+x /etc/rc.local"
-    }, {
         "type": "file",
         "source": "90-tune-kernel.conf",
         "destination": "/tmp/90-tune-kernel.conf"
     }, {
         "type": "shell",
         "inline": "sudo mv /tmp/90-tune-kernel.conf /etc/sysctl.d/"
-    }, {
-	"type": "file",
-	"source": "nginx.default.conf",
-	"destination": "/tmp/nginx.default.conf"
-    }, {
-	"type": "shell",
-	"inline": "sudo mv /tmp/nginx.default.conf /etc/nginx/sites-available/default"
     }
   ]
 }

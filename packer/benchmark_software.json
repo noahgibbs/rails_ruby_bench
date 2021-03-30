@@ -5,7 +5,7 @@
   },
   "discourse": {
       "git_url": "https://github.com/discourse/discourse.git",
-      "git_tag": "v1.8.0.beta13"
+      "git_tag": "v2.6.3"
   },
   "compare_rubies": [
       {

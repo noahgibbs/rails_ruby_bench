@@ -3,15 +3,10 @@
 require "fileutils"
 require "json"
 
-# Pass --local to run the setup on a local machine, or set RRB_LOCAL
-LOCAL = (ARGV.delete '--local') || ENV["RRB_LOCAL"]
-# Whether to build rubies with rvm
-BUILD_RUBY = !LOCAL
-USE_BASH = BUILD_RUBY
 # Print all commands and show their full output
-VERBOSE = LOCAL
+VERBOSE = true
 
-base = LOCAL ? File.expand_path('..', __FILE__) : "/home/ubuntu"
+base = "/home/ubuntu"
 benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 
 DISCOURSE_GIT_URL    = benchmark_software["discourse"]["git_url"]
@@ -58,11 +53,7 @@ def clone_or_update_repo(repo_url, tag, work_dir)
   end
 end
 
-if LOCAL
-  RAILS_BENCH_DIR = File.expand_path("../..", __FILE__)
-else
-  RAILS_BENCH_DIR = File.join(Dir.pwd, "rails_ruby_bench")
-end
+RAILS_BENCH_DIR = File.join(Dir.pwd, "rails_ruby_bench")
 DISCOURSE_DIR = File.join(RAILS_BENCH_DIR, "work", "discourse")
 
 clone_or_update_repo DISCOURSE_GIT_URL, DISCOURSE_TAG, DISCOURSE_DIR
