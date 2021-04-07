@@ -70,7 +70,6 @@ GEM
       coderay (>= 1.0.0)
       erubi (>= 1.0.0)
       rack (>= 0.9.0)
-    bigdecimal (1.3.5)
     binding_of_caller (1.0.0)
       debug_inspector (>= 0.0.1)
     bootsnap (1.7.3)
@@ -115,7 +114,8 @@ GEM
       in_threads (~> 1.3)
       progress (~> 3.0, >= 3.0.1)
     docile (1.3.5)
-    e2mmap (0.1.0)
+    domain_name (0.5.20190701)
+      unf (>= 0.0.5, < 1.0.0)
     email_reply_trimmer (0.1.13)
     ember-data-source (3.0.2)
       ember-source (>= 2, < 3.0)
@@ -140,7 +140,6 @@ GEM
     ffi (1.15.0)
     flamegraph (0.9.5)
     fspath (3.1.2)
-    gabbler (0.1.0)
     gc_tracer (1.5.1)
     get_process_mem (0.2.7)
       ffi (~> 1.0)
@@ -152,6 +151,9 @@ GEM
     highline (2.0.3)
     hkdf (0.3.0)
     htmlentities (4.3.4)
+    http-accept (1.7.0)
+    http-cookie (1.0.3)
+      domain_name (~> 0.5)
     http_accept_language (2.1.1)
     i18n (1.8.10)
       concurrent-ruby (~> 1.0)
@@ -192,6 +194,9 @@ GEM
     message_bus (3.3.4)
       rack (>= 1.1.3)
     method_source (1.0.0)
+    mime-types (3.3.1)
+      mime-types-data (~> 3.2015)
+    mime-types-data (3.2021.0225)
     mini_mime (1.1.0)
     mini_portile2 (2.5.0)
     mini_racer (0.3.1)
@@ -210,6 +215,7 @@ GEM
     multi_xml (0.6.0)
     multipart-post (2.1.1)
     mustache (1.1.1)
+    netrc (0.11.0)
     nio4r (2.5.7)
     nokogiri (1.11.2)
       mini_portile2 (~> 2.5.0)
@@ -320,6 +326,11 @@ GEM
     regexp_parser (2.1.1)
     request_store (1.5.0)
       rack (>= 1.4)
+    rest-client (2.1.0)
+      http-accept (>= 1.7.0, < 2.0)
+      http-cookie (>= 1.0.2, < 2.0)
+      mime-types (>= 1.16, < 4.0)
+      netrc (~> 0.8)
     rexml (3.2.4)
     rinku (2.0.6)
     rotp (6.2.0)
@@ -420,7 +431,6 @@ GEM
     test-prof (1.0.2)
     thor (1.1.0)
     thread_safe (0.3.6)
-    thwait (0.1.0)
     tilt (2.0.10)
     tzinfo (1.2.9)
       thread_safe (~> 0.1)
@@ -463,7 +473,6 @@ DEPENDENCIES
   aws-sdk-sns
   barber
   better_errors
-  bigdecimal (= 1.3.5)
   binding_of_caller
   bootsnap
   bullet
@@ -479,7 +488,6 @@ DEPENDENCIES
   discourse-ember-source (~> 3.12.2)
   discourse-fonts
   discourse_image_optim
-  e2mmap (= 0.1.0)
   email_reply_trimmer
   ember-handlebars-template (= 0.8.0)
   excon
@@ -490,7 +498,6 @@ DEPENDENCIES
   fast_xs
   fastimage
   flamegraph
-  gabbler
   gc_tracer
   get_process_mem
   highline
@@ -545,7 +552,7 @@ DEPENDENCIES
   rchardet
   redis
   redis-namespace
-  rexml (= 3.2.4)
+  rest-client
   rinku
   rotp
   rqrcode
@@ -570,7 +577,6 @@ DEPENDENCIES
   stackprof
   test-prof
   thor
-  thwait (= 0.1.0)
   uglifier
   unf
   unicorn
