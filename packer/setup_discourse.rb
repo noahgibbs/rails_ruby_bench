@@ -84,43 +84,17 @@ Dir.chdir(DISCOURSE_DIR) do
   end
 end
 
-puts "Add assets.rb initializer for Discourse"
-# Minor bugfix for this version of Discourse. Can remove when I only use 1.8.0+ Discourse?
-ASSETS_INIT = File.join(DISCOURSE_DIR, "config/initializers/assets.rb")
-unless File.exists?(ASSETS_INIT)
-  File.open(ASSETS_INIT, "w") do |f|
-    f.write <<-INITIALIZER
-      Rails.application.config.assets.precompile += %w( jquery_include.js )
-    INITIALIZER
-  end
-end
-
-puts "Hack to disable CSRF protection during benchmark..."
-# Turn off CSRF protection for Discourse in the benchmark. I have no idea why
-# user_simulator's CSRF handling stopped working between Discourse 1.7.X and
-# 1.8.0.beta10, but it clearly did. This is a horrible workaround and should
-# be fixed when I figure out the problem.
-APP_CONTROLLER = File.join(DISCOURSE_DIR, "app/controllers/application_controller.rb")
-contents = File.read(APP_CONTROLLER)
-original_line = "protect_from_forgery"
-patched_line = "#protect_from_forgery"
-unless contents[patched_line]
-  File.open(APP_CONTROLLER, "w") do |f|
-    f.print contents.gsub(original_line, patched_line)
-  end
-end
-
-# Oh and hey, looks like Bootsnap breaks something in the load order when
-# including config/environment into start.rb. Joy.
-# TODO: merge this patching into a little table of patches?
-path = File.join(DISCOURSE_DIR, "config/boot.rb")
-contents = File.read(path)
-original_line = "if ENV['RAILS_ENV'] != 'production'"
-patched_line = "if ENV['RAILS_ENV'] != 'production' && ENV['RAILS_ENV'] != 'profile'"
-unless contents[patched_line]
-  File.open(path, "w") do |f|
-    f.print contents.gsub(original_line, patched_line)
-  end
-end
+## Oh and hey, looks like Bootsnap breaks something in the load order when
+## including config/environment into start.rb. Joy.
+## TODO: merge this patching into a little table of patches?
+#path = File.join(DISCOURSE_DIR, "config/boot.rb")
+#contents = File.read(path)
+#original_line = "if ENV['RAILS_ENV'] != 'production'"
+#patched_line = "if ENV['RAILS_ENV'] != 'production' && ENV['RAILS_ENV'] != 'profile'"
+#unless contents[patched_line]
+#  File.open(path, "w") do |f|
+#    f.print contents.gsub(original_line, patched_line)
+#  end
+#end
 
 FileUtils.touch "/tmp/setup_discourse_ran_correctly"

@@ -3,6 +3,5 @@ Rebuild TODO:
 
 * Get seed script running again
 * Debug or runner-ify actual benchmark
-* Check: are gems successfully installed in all Rubies, not just system Ruby?
 * Re-enable tiny-batch benchmark run in packer build
 
