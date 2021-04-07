@@ -35,15 +35,18 @@ class DiscourseClient
     @cookies = nil
     @csrf = nil
     @prefix = "http://localhost:#{options[:port_num]}"
-
-    @last_topics = Topic.order('id desc').limit(10).pluck(:id)
-    @last_posts = Post.order('id desc').limit(10).pluck(:id)
   end
 
   def get_csrf_token
     resp = RestClient.get "#{@prefix}/session/csrf.json"
     @cookies = resp.cookies
     @csrf = JSON.parse(resp.body)["csrf"]
+  end
+
+  def read_topics_and_posts
+    raise "Okay, how are we gonna do this?"
+    @last_topics = Topic.order('id desc').limit(10).pluck(:id)
+    @last_posts = Post.order('id desc').limit(10).pluck(:id)
   end
 
   def request(method, url, payload = nil)
@@ -113,6 +116,7 @@ def time_actions(actions, user_offset, port_num)
   log "Getting Rails CSRF token..."
   client = DiscourseClient.new(port_num: port_num)
   client.get_csrf_token
+  client.read_topics_and_posts
 
   log "Logging in as #{username.inspect}... (not part of benchmark request time(s))"
   client.request :post, "/session", { "login" => username, "password" => "longpassword" }
