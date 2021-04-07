@@ -1,4 +1,8 @@
 
-Explicit JSON-check step at start of Packer build to quickly catch JSON errors in benchmark_software.json
+Rebuild TODO:
 
-Turn off automatic Ubuntu updates in Packer image: https://libre-software.net/ubuntu-automatic-updates/
+* Get seed script running again
+* Debug or runner-ify actual benchmark
+* Check: are gems successfully installed in all Rubies, not just system Ruby?
+* Re-enable tiny-batch benchmark run in packer build
+
