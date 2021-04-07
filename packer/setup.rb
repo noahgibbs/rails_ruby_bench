@@ -159,11 +159,10 @@ end
 
 clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
 
-# TODO: debug seed_db_data as a runner script
-#Dir.chdir(RAILS_BENCH_DIR) do
-#  # If there are already users added, this should exit without error and not change the database
-#  puts "Adding seed data..."
-#  csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
-#end
+Dir.chdir(RAILS_BENCH_DIR + "/work/discourse") do
+  # If there are already users added, this should exit without error and not change the database
+  puts "Adding seed data..."
+  csystem "RAILS_ENV=profile rails runner ../../seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
+end
 
 FileUtils.touch "/tmp/setup_ran_correctly"
