@@ -142,22 +142,14 @@ benchmark_software["compare_rubies"].each do |ruby_hash|
 
     ruby_name = ruby_hash["mount_name"] || ruby_hash["name"]
     Dir.chdir(RAILS_BENCH_DIR) do
-      csystem "rbenv shell #{ruby_name} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
-
-      if !ruby_hash.has_key?("discourse") || ruby_hash["discourse"]
-        which_bundle = last_line_with_ruby("which bundle", ruby_name)
-        puts "Fell through, trying to run bundle. Executable: #{which_bundle.inspect}"
-        csystem "rbenv shell #{ruby_name} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
-      end
+      csystem "RBENV_VERSION=#{ruby_name} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
     end
 
   elsif ruby_hash["ruby_build_name"]
-    csystem "ruby-build #{ruby_hash["ruby_build_name"]}", "Couldn't use rbenv/ruby-build to install Ruby named #{ruby_hash["ruby_build_name"]}!"
-    if ruby_hash["discourse"]
-      csystem "rbenv shell #{ruby_hash["ruby_build_name"]} && cd #{RAILS_BENCH_DIR} && bundle _#{BUNDLER_VERSION}_", "Couldn't install RRB gems in #{RAILS_BENCH_DIR} for Ruby-Build-installed Ruby #{ruby_hash["ruby_build_name"]}!", :bash => true
-    end
-    csystem "rbenv shell #{ruby_hash["ruby_build_name"]} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["ruby_build_name"].inspect}!", :bash => true
+    csystem "rbenv install #{ruby_hash["ruby_build_name"]}", "Couldn't use rbenv/ruby-build to install Ruby named #{ruby_hash["ruby_build_name"]}!"
+    csystem "RBENV_VERSION=#{ruby_hash["ruby_build_name"]} && gem install bundler -v#{BUNDLER_VERSION}", "Couldn't install Bundler in #{RAILS_BENCH_DIR} for Ruby #{ruby_hash["ruby_build_name"].inspect}!", :bash => true
   end
+end
 
 puts "Create benchmark_ruby_versions.txt"
 File.open("/home/ubuntu/benchmark_ruby_versions.txt", "w") do |f|
@@ -167,10 +159,11 @@ end
 
 clone_or_update_repo(DISCOURSE_URL, DISCOURSE_TAG, DISCOURSE_DIR)
 
-Dir.chdir(RAILS_BENCH_DIR) do
-  # If there are already users added, this should exit without error and not change the database
-  puts "Adding seed data..."
-  csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
-end
+# TODO: debug seed_db_data as a runner script
+#Dir.chdir(RAILS_BENCH_DIR) do
+#  # If there are already users added, this should exit without error and not change the database
+#  puts "Adding seed data..."
+#  csystem "RAILS_ENV=profile ruby seed_db_data.rb", "Couldn't seed the database with profiling sample data!", :bash => true
+#end
 
 FileUtils.touch "/tmp/setup_ran_correctly"

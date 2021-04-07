@@ -52,13 +52,13 @@ first_ruby = nil
 
 benchmark_software["compare_rubies"].each do |hash|
   next unless hash["found_name"]
-  next if hash.has_key("discourse") && !hash["discourse"]
+  next if hash.has_key?("discourse") && !hash["discourse"]
 
   ruby_name = hash["found_name"]
   first_ruby ||= ruby_name
   puts "Install Discourse gems in Ruby: #{ruby_name.inspect}"
   Dir.chdir(RAILS_BENCH_DIR) do
-    csystem "rbenv shell #{ruby_name} && gem install bundler -v#{BUNDLER_VERSION} && bundle _#{BUNDLER_VERSION}_", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
+    csystem "RBENV_VERSION=#{ruby_name} bundle _#{BUNDLER_VERSION}_", "Couldn't install Discourse gems in #{DISCOURSE_DIR} for Ruby #{ruby_name.inspect}!", :bash => true
   end
 end
 
