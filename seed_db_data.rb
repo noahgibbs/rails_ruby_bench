@@ -8,8 +8,6 @@ require_relative 'vendor/gabbler'
 random_seed = 2546769937
 do_drop = false
 
-STDERR.puts "ARGS: #{ARGV.inspect}"
-
 OptionParser.new do |opts|
   opts.banner = "Usage: RAILS_ENV=profile ruby seed_db_data.rb [options]"
   opts.on("-r", "--random-seed NUMBER", "random seed") do |r|
@@ -76,7 +74,7 @@ end
 SiteSetting.queue_jobs = false
 
 # by default, Discourse has a "system" account
-if User.count > 1
+if User.count > 2
   puts "Only run this script against an empty DB (and in RAILS_ENV=profile)"
   exit
 end
