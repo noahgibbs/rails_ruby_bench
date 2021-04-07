@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+# This script should be run with "rails runner seed_db_data.rb"
 
 # Based on Discourse's profile_db_generator
 
@@ -7,6 +7,8 @@ require 'gabbler'
 
 random_seed = 2546769937
 do_drop = false
+
+STDERR.puts "ARGS: #{ARGV.inspect}"
 
 OptionParser.new do |opts|
   opts.banner = "Usage: RAILS_ENV=profile ruby seed_db_data.rb [options]"
@@ -62,15 +64,13 @@ def create_admin(seq)
   }
 end
 
-require File.expand_path(File.join(File.dirname(__FILE__), "work/discourse/config/environment"))
-
 unless Rails.env == "profile"
   puts "This script should only be used in the profile environment"
   exit
 end
 
 if do_drop
-  system "cd work/discourse && RAILS_ENV=profile rake db:drop db:create db:migrate"
+  system "cd #{Rails.root} && RAILS_ENV=profile rake db:drop db:create db:migrate"
 end
 
 SiteSetting.queue_jobs = false
