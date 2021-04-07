@@ -1,6 +1,6 @@
 # Initially based on Discourse's user_simulator script
 
-#require 'gabbler'
+require_relative "vendor/gabbler"
 
 # Example options array passed into these functions
 #options = {
@@ -87,28 +87,6 @@ class DiscourseClient
       # TODO: request(:delete, "/draft.json", "topic_id" => "topic_XX")
       # TODO: request(:get, "/t/#{topic_id}.json?track_visit=true&forceLoad=true")
       # TODO: update @last_topics
-=begin
-Started GET "/composer_messages?composer_action=createTopic&_=1483481672874" for ::1 at 2017-01-03 14:39:19 -0800
-lProcessing by ComposerMessagesController#index as JSON
-  Parameters: {"composer_action"=>"createTopic", "_"=>"1483481672874"}
-Completed 200 OK in 27ms (Views: 0.1ms | ActiveRecord: 1.6ms)
-Started GET "/similar_topics?title=This%20is%20a%20new%20topic.%20Totally.&raw=And%20this%20is%20the%20body.%20Yup!%20It%27s%20awesome.%0A&_=1483481672875" for ::1 at 2017-01-03 14:39:32 -0800
-Processing by SimilarTopicsController#index as JSON
-  Parameters: {"title"=>"This is a new topic. Totally.", "raw"=>"And this is the body. Yup! It's awesome.\n", "_"=>"1483481672875"}
-Completed 200 OK in 35ms (Views: 0.1ms | ActiveRecord: 16.0ms)
-Started POST "/draft.json" for ::1 at 2017-01-03 14:39:34 -0800
-Processing by DraftController#update as JSON
-  Parameters: {"draft_key"=>"new_topic", "data"=>"{\"reply\":\"And this is the body. Yup! It's awesome.\\n\",\"action\":\"createTopic\",\"title\":\"This is a new topic. Totally.\",\"categoryId\":null,\"postId\":null,\"archetypeId\":\"regular\",\"metaData\":null,\"composerTime\":14745,\"typingTime\":5000}", "sequence"=>"2"}
-Completed 200 OK in 14ms (Views: 0.3ms | ActiveRecord: 5.1ms)
-Started GET "/similar_topics?title=This%20is%20a%20new%20topic.%20Totally.&raw=And%20this%20is%20the%20body.%20Yup!%20It%27s%20awesome.%20Totally%20awesome.%0A&_=1483481672876" for ::1 at 2017-01-03 14:39:42 -0800
-Processing by SimilarTopicsController#index as JSON
-  Parameters: {"title"=>"This is a new topic. Totally.", "raw"=>"And this is the body. Yup! It's awesome. Totally awesome.\n", "_"=>"1483481672876"}
-Completed 200 OK in 23ms (Views: 0.1ms | ActiveRecord: 8.9ms)
-Started POST "/draft.json" for ::1 at 2017-01-03 14:39:42 -0800
-Processing by DraftController#update as JSON
-  Parameters: {"draft_key"=>"new_topic", "data"=>"{\"reply\":\"And this is the body. Yup! It's awesome. Totally awesome.\\n\",\"action\":\"createTopic\",\"title\":\"This is a new topic. Totally.\",\"categoryId\":null,\"postId\":null,\"archetypeId\":\"regular\",\"metaData\":null,\"composerTime\":23385,\"typingTime\":6300}", "sequence"=>"2"}
-Completed 200 OK in 8ms (Views: 0.2ms | ActiveRecord: 1.4ms)
-=end
     when :delete_reply
       # Delete reply, currently not active, need to get correct Post ID
       request(:delete, "/posts/#{post_num}")

@@ -5,7 +5,6 @@
 require 'optparse'
 require 'rest-client'
 require 'json'
-require 'gabbler'  # Require this before requiring Rails' config/environment.rb, which will start Bundler.
 require 'get_process_mem'
 
 # Run this in "profile" environment for Discourse.
