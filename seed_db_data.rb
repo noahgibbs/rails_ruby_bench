@@ -3,7 +3,7 @@
 # Based on Discourse's profile_db_generator
 
 require 'optparse'
-require 'gabbler'
+require_relative 'vendor/gabbler'
 
 random_seed = 2546769937
 do_drop = false
