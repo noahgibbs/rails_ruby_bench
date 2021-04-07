@@ -106,21 +106,17 @@ def log(s)
 end
 
 def time_actions(actions, user_offset, port_num)
-  user = User.offset(user_offset).first
-  unless user
-    print "No user at offset #{user_offset.inspect}! Exiting.\n"
-    exit -1
-  end
+  username = "admin#{user_offset}"
 
-  log "Simulating activity for user id #{user.id}: #{user.name}"
+  log "Simulating activity for user #{username}"
 
   log "Getting Rails CSRF token..."
   client = DiscourseClient.new(port_num: port_num)
   client.get_csrf_token
 
-  log "Logging in as #{user.username.inspect}... (not part of benchmark request time(s))"
-  client.request :post, "/session", { "login" => user.username, "password" => "longpassword" }
-  client.request :post, "/login", { "login" => user.username, "password" => "longpassword", "redirect" => "http://localhost:#{port_num}/" }
+  log "Logging in as #{username.inspect}... (not part of benchmark request time(s))"
+  client.request :post, "/session", { "login" => username, "password" => "longpassword" }
+  client.request :post, "/login", { "login" => username, "password" => "longpassword", "redirect" => "http://localhost:#{port_num}/" }
 
   times = []
   t_last = Time.now

@@ -1,4 +1,4 @@
-# This script should be run with "rails runner seed_db_data.rb"
+# This script should be run with "rails runner seed_db_data.rb" from a Discourse installation
 
 # Based on Discourse's profile_db_generator
 
