@@ -3,6 +3,8 @@
 # This script, when run on an RRB EC2 instance, will attempt to build
 # the given Ruby SHA in a predetermined way.
 
+raise "This script hasn't been updated for rbenv yet!"
+
 if ARGV.size != 1
   raise "Error - provide exactly one SHA as the only argument!"
 end

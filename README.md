@@ -147,21 +147,21 @@ the number of load-testing threads and Puma processes and threads.
 
 I normally copy the JSON files back to my own machine, something like:
 
-> scp -i ~/.ssh/my-ssh-key-name.pem ubuntu@ec2-34-228-227-234.compute-1.amazonaws.com:~/rails_ruby_bench/*.json ./my_local_directory
+    scp -i ~/.ssh/my-ssh-key-name.pem ubuntu@ec2-34-228-227-234.compute-1.amazonaws.com:~/rails_ruby_bench/*.json ./my_local_directory
 
 ## Debugging and AWS
 
 By default, the Rails benchmark is git-cloned under
 ~ubuntu/rails\_ruby\_bench, and Discourse is cloned under the work
-subdirectory of that repository. The built Rubies are mounted using
-rvm for the benchmark. You can see them with "rvm list". If you want
+subdirectory of that repository. The built Rubies are registered with
+rbenv for the benchmark. You can see them with "rbenv versions". If you want
 to change anything when starting your own instance, those are great
 places to begin.
 
 By default, the image won't update or rebuild Ruby or Discourse, nor
-update the Rails Ruby benchmark on boot. It will use the versions of
+update the Rails Ruby benchmark. It will use the versions of
 all of those things that were current when the AMI was built. But you
-can modify your own image later however you like.
+can modify your own image later however you like, and then re-dump it.
 
 If you'd like to change the behavior of the AWS image, you can use AWS
 user data to run a script on boot. See

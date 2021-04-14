@@ -5,5 +5,5 @@
 RUBIES = File.read("/home/ubuntu/benchmark_ruby_versions.txt").split("\n")
 
 RUBIES.each do |ruby|
-  system("bash -l -c \"rvm use #{ruby} && #{ARGV.join(" ")}\"")
+  system(env: { "RBENV_VERSION" => ruby }, *ARGV }
 end

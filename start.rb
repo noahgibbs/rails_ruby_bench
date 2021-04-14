@@ -376,7 +376,7 @@ print "Median thread run: #{worker_times_max.sort[ worker_times.size / 2 ] }\n"
 print "Raw times: #{worker_times.inspect}\n"
 
 env_vars = ENV.keys
-important_env_vars = env_vars.select { |name| name.downcase["ruby"] || name.downcase["gem"] || name.downcase["rrb"]} + [ "LD_PRELOAD" ]
+important_env_vars = env_vars.select { |name| name.downcase["ruby"] || name.downcase["gem"] || name.downcase["rrb"] || name.downcase["rbenv"]} + [ "LD_PRELOAD" ]
 env_hash = {}
 important_env_vars.each { |var| env_hash["env-#{var}"] = ENV[var] }
 
@@ -401,7 +401,7 @@ test_data = {
   "environment" => {
     "RUBY_VERSION" => RUBY_VERSION,
     "RUBY_DESCRIPTION" => RUBY_DESCRIPTION,
-    "rvm current" => `rvm current 2>&1`.strip,
+    "rbenv version" => `rbenv version 2>&1`.strip,
     "discourse git status" => `cd work/discourse && git status`,
     "discourse git sha" => `cd work/discourse && git rev-parse HEAD`.chomp,
     "rails_ruby_bench git status" => `git status`,
