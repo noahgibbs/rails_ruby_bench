@@ -9,8 +9,9 @@ VERBOSE = true
 base = "/home/ubuntu"
 benchmark_software = JSON.load(File.read("#{base}/benchmark_software.json"))
 
-RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"]  # Cloned in ami.json
-RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"]
+# Cloned in ami.json
+RAILS_RUBY_BENCH_URL = ENV["RAILS_RUBY_BENCH_URL"] || benchmark_software["rails_ruby_bench"]["git_url"]
+RAILS_RUBY_BENCH_TAG = ENV["RAILS_RUBY_BENCH_TAG"] || benchmark_software["rails_ruby_bench"]["git_tag"]
 
 DISCOURSE_DIR = ENV["DISCOURSE_DIR"] || File.join(__dir__, "work", "discourse")
 DISCOURSE_URL = ENV["DISCOURSE_URL"] || benchmark_software["discourse"]["git_url"]
